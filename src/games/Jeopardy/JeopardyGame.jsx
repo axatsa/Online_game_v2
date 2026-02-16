@@ -255,33 +255,34 @@ export default function JeopardyGame({ config, onFinish, onExit }) {
 
             {/* Game Grid */}
             <div style={{
-                flex: 1, background: '#1e3a8a', padding: '24px', borderRadius: '24px',
-                boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.2)', overflow: 'auto',
-                border: '4px solid #1e40af'
+                flex: 1, background: '#1e3a8a', padding: '12px', borderRadius: '16px',
+                boxShadow: 'inset 0 4px 12px rgba(0,0,0,0.2)', overflow: 'hidden',
+                border: '4px solid #1e40af',
+                display: 'flex', flexDirection: 'column'
             }}>
                 <div style={{
-                    display: 'grid',
-                    gap: '16px',
-                    gridTemplateColumns: `repeat(${gameData.categories.length}, 1fr)`,
+                    display: 'flex',
+                    gap: '12px',
                     height: '100%',
-                    minWidth: '800px' // Preserve layout on small screens
+                    width: '100%'
                 }}>
                     {gameData.categories.map((cat, colIndex) => (
-                        <div key={colIndex} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div key={colIndex} style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
                             {/* Category Header */}
                             <div style={{
                                 background: '#172554',
                                 color: '#93c5fd',
-                                padding: '16px',
-                                borderRadius: '12px',
+                                padding: '8px',
+                                borderRadius: '10px',
                                 textAlign: 'center',
                                 fontWeight: 'bold',
-                                fontSize: '18px',
+                                fontSize: 'clamp(12px, 1.5vw, 18px)',
                                 border: '2px solid #3b82f6',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                minHeight: '80px',
+                                height: '20%',
+                                maxHeight: '100px',
                                 textShadow: '0 2px 4px rgba(0,0,0,0.5)',
                                 lineHeight: 1.2
                             }}>
@@ -289,61 +290,63 @@ export default function JeopardyGame({ config, onFinish, onExit }) {
                             </div>
 
                             {/* Questions */}
-                            {cat.questions.map((q, rowIndex) => {
-                                const isAnswered = answered.has(`${colIndex}-${rowIndex}`)
-                                return (
-                                    <button
-                                        key={rowIndex}
-                                        disabled={isAnswered}
-                                        onClick={() => handleQuestionClick(colIndex, rowIndex, q)}
-                                        style={{
-                                            flex: 1,
-                                            margin: 0,
-                                            background: isAnswered ? 'rgba(30, 58, 138, 0.5)' : '#2563eb', // Darker if answered
-                                            color: isAnswered ? 'transparent' : '#fcd34d', // Hide text if answered
-                                            border: isAnswered ? '2px dashed #1e40af' : '2px solid #60a5fa',
-                                            borderRadius: '12px',
-                                            fontSize: '32px',
-                                            fontWeight: '700',
-                                            fontFamily: 'monospace',
-                                            cursor: isAnswered ? 'default' : 'pointer',
-                                            boxShadow: isAnswered ? 'none' : '0 6px 0 #1d4ed8',
-                                            transition: 'transform 0.1s, box-shadow 0.1s',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            transform: isAnswered ? 'scale(0.95)' : 'scale(1)',
-                                            position: 'relative'
-                                        }}
-                                        onMouseDown={e => {
-                                            if (!isAnswered) {
-                                                e.currentTarget.style.transform = 'translateY(4px)'
-                                                e.currentTarget.style.boxShadow = '0 2px 0 #1d4ed8'
-                                            }
-                                        }}
-                                        onMouseUp={e => {
-                                            if (!isAnswered) {
-                                                e.currentTarget.style.transform = 'translateY(0)'
-                                                e.currentTarget.style.boxShadow = '0 6px 0 #1d4ed8'
-                                            }
-                                        }}
-                                        onMouseEnter={e => {
-                                            if (!isAnswered) {
-                                                e.currentTarget.style.filter = 'brightness(1.1)'
-                                            }
-                                        }}
-                                        onMouseLeave={e => {
-                                            if (!isAnswered) {
-                                                e.currentTarget.style.filter = 'brightness(1)'
-                                                e.currentTarget.style.transform = 'translateY(0)'
-                                                e.currentTarget.style.boxShadow = '0 6px 0 #1d4ed8'
-                                            }
-                                        }}
-                                    >
-                                        {!isAnswered && q.points}
-                                    </button>
-                                )
-                            })}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {cat.questions.map((q, rowIndex) => {
+                                    const isAnswered = answered.has(`${colIndex}-${rowIndex}`)
+                                    return (
+                                        <button
+                                            key={rowIndex}
+                                            disabled={isAnswered}
+                                            onClick={() => handleQuestionClick(colIndex, rowIndex, q)}
+                                            style={{
+                                                flex: 1,
+                                                margin: 0,
+                                                background: isAnswered ? 'rgba(30, 58, 138, 0.3)' : '#2563eb',
+                                                color: isAnswered ? 'transparent' : '#fcd34d',
+                                                border: isAnswered ? '2px dashed rgba(30, 58, 138, 0.5)' : '2px solid #60a5fa',
+                                                borderRadius: '10px',
+                                                fontSize: 'clamp(16px, 3vw, 32px)',
+                                                fontWeight: '700',
+                                                fontFamily: 'monospace',
+                                                cursor: isAnswered ? 'default' : 'pointer',
+                                                boxShadow: isAnswered ? 'none' : '0 4px 0 #1d4ed8',
+                                                transition: 'transform 0.1s, box-shadow 0.1s',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                transform: isAnswered ? 'scale(0.95)' : 'scale(1)',
+                                                position: 'relative'
+                                            }}
+                                            onMouseDown={e => {
+                                                if (!isAnswered) {
+                                                    e.currentTarget.style.transform = 'translateY(4px)'
+                                                    e.currentTarget.style.boxShadow = '0 2px 0 #1d4ed8'
+                                                }
+                                            }}
+                                            onMouseUp={e => {
+                                                if (!isAnswered) {
+                                                    e.currentTarget.style.transform = 'translateY(0)'
+                                                    e.currentTarget.style.boxShadow = '0 4px 0 #1d4ed8'
+                                                }
+                                            }}
+                                            onMouseEnter={e => {
+                                                if (!isAnswered) {
+                                                    e.currentTarget.style.filter = 'brightness(1.1)'
+                                                }
+                                            }}
+                                            onMouseLeave={e => {
+                                                if (!isAnswered) {
+                                                    e.currentTarget.style.filter = 'brightness(1)'
+                                                    e.currentTarget.style.transform = 'translateY(0)'
+                                                    e.currentTarget.style.boxShadow = '0 4px 0 #1d4ed8'
+                                                }
+                                            }}
+                                        >
+                                            {!isAnswered && q.points}
+                                        </button>
+                                    )
+                                })}
+                            </div>
                         </div>
                     ))}
                 </div>
