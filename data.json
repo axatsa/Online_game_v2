@@ -1,0 +1,108 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Администратор",
+      "email": "admin@thompson.edu",
+      "password": "$2a$10$vB1OL4TBsmfUPJrDo1FkrunvuriGifziy4dkWMl1tww7yRnI1ryMe",
+      "grade": "",
+      "role": "admin",
+      "xp": 0,
+      "level": 1,
+      "streak": 0,
+      "status": "active",
+      "createdAt": "2026-02-16T07:43:10.301Z",
+      "lastLogin": "2026-02-16T07:43:10.302Z"
+    },
+    {
+      "id": 2,
+      "name": "sa axat",
+      "email": "sa@gmail.com",
+      "password": "$2a$10$92wknp9eHl8Fyhx9p1Rrcel6eA/m.U90SGaoYn.oruf32IQNsw222",
+      "grade": "9",
+      "role": "student",
+      "xp": 460,
+      "level": 5,
+      "streak": 0,
+      "status": "active",
+      "createdAt": "2026-02-16T08:55:23.092Z",
+      "lastLogin": "2026-02-16T09:03:37.167Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": 1771232147302,
+      "userId": 2,
+      "gameId": "memory-matrix",
+      "score": 4,
+      "xpEarned": 105,
+      "data": {
+        "moves": 8,
+        "time": 11,
+        "pairs": 4,
+        "totalPairs": 4,
+        "gridSize": "3x3",
+        "category": "Наука",
+        "xp": 105,
+        "stars": 2
+      },
+      "createdAt": "2026-02-16T08:55:47.302Z"
+    },
+    {
+      "id": 1771232147305,
+      "userId": 2,
+      "gameId": "memory-matrix",
+      "score": 4,
+      "xpEarned": 105,
+      "data": {
+        "moves": 8,
+        "time": 11,
+        "pairs": 4,
+        "totalPairs": 4,
+        "gridSize": "3x3",
+        "category": "Наука",
+        "xp": 105,
+        "stars": 2
+      },
+      "createdAt": "2026-02-16T08:55:47.305Z"
+    },
+    {
+      "id": 1771232191489,
+      "userId": 2,
+      "gameId": "memory-matrix",
+      "score": 8,
+      "xpEarned": 125,
+      "data": {
+        "moves": 21,
+        "time": 33,
+        "pairs": 8,
+        "totalPairs": 8,
+        "gridSize": "4x4",
+        "category": "Наука",
+        "xp": 125,
+        "stars": 1
+      },
+      "createdAt": "2026-02-16T08:56:31.489Z"
+    },
+    {
+      "id": 1771232191492,
+      "userId": 2,
+      "gameId": "memory-matrix",
+      "score": 8,
+      "xpEarned": 125,
+      "data": {
+        "moves": 21,
+        "time": 33,
+        "pairs": 8,
+        "totalPairs": 8,
+        "gridSize": "4x4",
+        "category": "Наука",
+        "xp": 125,
+        "stars": 1
+      },
+      "createdAt": "2026-02-16T08:56:31.492Z"
+    }
+  ],
+  "questions": [],
+  "nextUserId": 3
+}

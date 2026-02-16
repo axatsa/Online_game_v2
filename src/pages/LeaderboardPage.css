@@ -1,0 +1,127 @@
+.leaderboard-wrapper {
+    min-height: 100vh;
+    background: var(--background);
+}
+
+.leaderboard-header {
+    text-align: center;
+    padding: 40px 0 16px;
+}
+
+.leaderboard-subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin-top: 8px;
+}
+
+/* Top 3 */
+.top-three {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin: 32px 0;
+}
+
+.top-card {
+    background: white;
+    border-radius: var(--radius-xl);
+    padding: 32px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-slow);
+}
+
+.top-card:hover {
+    transform: translateY(-6px);
+}
+
+.top-card-1 {
+    border: 2px solid #F59E0B;
+    box-shadow: 0 8px 30px rgba(245, 158, 11, 0.15);
+}
+
+.top-card-2 {
+    border: 2px solid #E2E8F0;
+}
+
+.top-card-3 {
+    border: 2px solid #D97706;
+}
+
+.top-card-name {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+}
+
+.top-card-xp {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    font-family: var(--font-heading);
+}
+
+/* Leaderboard List */
+.leaderboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-bottom: 64px;
+}
+
+.leaderboard-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    background: white;
+    border-radius: var(--radius-lg);
+    transition: all var(--transition-fast);
+}
+
+.leaderboard-row:nth-child(even) {
+    background: var(--background);
+}
+
+.leaderboard-row:hover {
+    background: var(--primary-light);
+}
+
+.leaderboard-rank {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--muted);
+    min-width: 32px;
+    text-align: center;
+}
+
+.leaderboard-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.leaderboard-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.leaderboard-xp {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--primary);
+    font-family: var(--font-heading);
+}
+
+@media (max-width: 768px) {
+    .top-three {
+        grid-template-columns: 1fr;
+        max-width: 360px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+}

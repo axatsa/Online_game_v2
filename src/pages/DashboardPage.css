@@ -1,0 +1,158 @@
+.dashboard {
+    min-height: 100vh;
+    background: var(--background);
+}
+
+/* --- Hero --- */
+.hero {
+    margin-top: 32px;
+    background: var(--card);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    padding: 40px 44px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.hero-greeting {
+    font-size: 1.05rem;
+    color: var(--muted);
+    margin-bottom: 8px;
+}
+
+.hero-title {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    margin-bottom: 8px;
+    line-height: 1.2;
+}
+
+.hero-subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.hero-stats {
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+}
+
+.hero-stat-level {
+    background: var(--primary);
+    color: white;
+    min-width: 120px;
+    text-align: center;
+    border-radius: var(--radius-lg);
+}
+
+.hero-stat-level .stat-value {
+    font-size: 2.25rem;
+}
+
+.hero-stat-xp {
+    background: var(--background);
+    color: var(--secondary);
+    min-width: 120px;
+    text-align: center;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.hero-stat-xp .stat-value {
+    font-size: 1.5rem;
+}
+
+/* Hero Decorative */
+.hero-decor {
+    position: absolute;
+    border-radius: 50%;
+    z-index: 1;
+}
+
+.hero-decor-1 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(153, 27, 27, 0.06) 0%, transparent 70%);
+    top: -100px;
+    right: -50px;
+}
+
+.hero-decor-2 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(100, 116, 139, 0.06) 0%, transparent 70%);
+    bottom: -80px;
+    left: -40px;
+}
+
+/* --- Filters --- */
+.filters-section {
+    margin-top: 32px;
+    margin-bottom: 8px;
+}
+
+/* --- Games Grid --- */
+.games-section {
+    margin-top: 24px;
+    padding-bottom: 64px;
+}
+
+.games-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.games-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 80px 20px;
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+@media (max-width: 1024px) {
+    .games-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .hero-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 640px) {
+    .games-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero {
+        padding: 28px 24px;
+    }
+
+    .hero-title {
+        font-size: 1.5rem;
+    }
+
+    .hero-stats {
+        width: 100%;
+    }
+
+    .hero-stat-level,
+    .hero-stat-xp {
+        flex: 1;
+    }
+}
