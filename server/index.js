@@ -62,6 +62,14 @@ let db
     );
   `)
 
+    // Migration: Check if generated_count exists
+    try {
+        await db.run("ALTER TABLE users ADD COLUMN generated_count INTEGER DEFAULT 0")
+        console.log("Migration: Added generated_count column")
+    } catch (e) {
+        // Column likely exists
+    }
+
     // Seeding
     const admin = await db.get("SELECT * FROM users WHERE email = 'admin@classplay.uz'")
     if (!admin) {
@@ -149,13 +157,14 @@ app.post('/api/generate/math', checkDbReady, authenticateToken, async (req, res)
 app.post('/api/generate/crossword', checkDbReady, authenticateToken, async (req, res) => {
     console.log("POST /api/generate/crossword")
     try {
-        const { topic, wordsCount, language } = req.body
+        const { topic, wordsCount, language, grade } = req.body
 
         const prompt = `
       Generates a crossword puzzle word list.
       Topic: "${topic}"
+      Target Audience: Grade ${grade || '1-4'} students (Simple vocabulary).
       Language: ${language === 'uz' ? 'Uzbek' : 'Russian'}
-      Count: ${wordsCount || 10} words
+      Count: ${(wordsCount || 10) + 5} words (Generate extra for better grid fit)
       
       Output ONLY strict JSON:
       {

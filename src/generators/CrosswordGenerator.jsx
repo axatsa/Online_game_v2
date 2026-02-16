@@ -19,6 +19,7 @@ export default function CrosswordGenerator() {
         topic: classCtx.topic || '',
         wordCount: 10,
         language: classCtx.language || 'ru',
+        grade: '3'
     })
     const [crossword, setCrossword] = useState(null)
     const [loading, setLoading] = useState(false)
@@ -74,7 +75,7 @@ export default function CrosswordGenerator() {
             const data = await res.json()
 
             if (data.words && data.words.length > 0) {
-                const gridData = buildGridFromWords(data.words)
+                const gridData = buildGridFromWords(data.words, settings.wordCount)
                 setCrossword(gridData)
             } else {
                 throw new Error('AI не вернул слова')
@@ -143,7 +144,21 @@ export default function CrosswordGenerator() {
                     <input className="input" placeholder="Космос, Растения, Животные..." value={settings.topic} onChange={e => set('topic', e.target.value)} />
                 </div>
 
-                {/* 2. Word Count */}
+                {/* 2. Grade Level */}
+                <div className="form-group" style={{ marginBottom: 20 }}>
+                    <label className="form-label">Класс</label>
+                    <div className="flex gap-xs">
+                        {['1', '2', '3', '4', '5'].map(g => (
+                            <button key={g}
+                                className={`btn btn-sm ${settings.grade === g ? 'btn-primary' : 'btn-secondary'}`}
+                                onClick={() => set('grade', g)}
+                                style={{ flex: 1 }}
+                            >{g}</button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 3. Word Count */}
                 <div className="form-group" style={{ marginBottom: 20 }}>
                     <label className="form-label">Количество слов: {settings.wordCount}</label>
                     <input type="range" min="4" max="15" value={settings.wordCount}
@@ -152,7 +167,7 @@ export default function CrosswordGenerator() {
                     />
                 </div>
 
-                {/* 3. Language */}
+                {/* 4. Language */}
                 <div className="form-group" style={{ marginBottom: 20 }}>
                     <label className="form-label">Язык</label>
                     <div className="flex gap-xs">
@@ -219,66 +234,143 @@ export default function CrosswordGenerator() {
                             {/* PAGE 1: PUZZLE */}
                             <div ref={puzzleRef} className="paper-preview animate-slide" style={{
                                 background: 'white',
-                                padding: '40px',
+                                padding: '30px', // Reduced padding
                                 width: '595px',
-                                minHeight: '842px',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                position: 'relative'
+                                minHeight: '842px', // A4
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column'
                             }}>
-                                <h1 style={{ fontFamily: 'Merriweather, serif', fontSize: '24px', textAlign: 'center', marginBottom: 8 }}>
-                                    Кроссворд: {settings.topic || 'Общий'}
-                                </h1>
-                                <p style={{ textAlign: 'center', color: '#666', fontSize: '14px', marginBottom: 32 }}>
-                                    Решите кроссворд, используя подсказки ниже
-                                </p>
-
-                                <div style={{ borderBottom: '2px solid #ccc', marginBottom: 32 }} />
-
-                                {/* Grid (Empty Cells) */}
+                                {/* Decorative Header */}
                                 <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: `repeat(${crossword.gridSize}, 30px)`,
-                                    gap: 0, // No gap, borders handle it
-                                    width: 'fit-content',
-                                    margin: '0 auto 40px auto',
-                                    border: '2px solid #000' // Outer border
+                                    borderBottom: '2px solid #8B5CF6',
+                                    paddingBottom: 10,
+                                    marginBottom: 20,
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
                                 }}>
-                                    {crossword.grid.flat().map((cell, i) => (
-                                        <div key={i} style={{
-                                            width: 30, height: 30,
-                                            background: 'transparent',
-                                            // Only render border if it's a valid cell
-                                            border: cell ? '1px solid #000' : 'none',
-                                            display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start',
-                                            position: 'relative'
+                                    <div>
+                                        <h2 style={{
+                                            fontFamily: 'Merriweather, serif',
+                                            fontSize: '24px',
+                                            color: '#5B21B6',
+                                            margin: 0
                                         }}>
-                                            {cell?.number && (
-                                                <span style={{ position: 'absolute', top: 1, left: 2, fontSize: '9px', fontWeight: 'bold' }}>
-                                                    {cell.number}
-                                                </span>
-                                            )}
+                                            {settings.topic ? `Кроссворд: ${settings.topic}` : 'Кроссворд'}
+                                        </h2>
+                                        <div style={{ fontSize: '12px', color: '#666', marginTop: 2 }}>
+                                            Развиваем мышление • {settings.grade} класс
                                         </div>
-                                    ))}
+                                    </div>
+                                    <div style={{
+                                        width: 40,
+                                        height: 40,
+                                        background: '#F5F3FF',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#8B5CF6'
+                                    }}>
+                                        <Sparkles size={20} />
+                                    </div>
                                 </div>
 
-                                {/* Clues */}
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
-                                    <div>
-                                        <h3 style={{ fontSize: '14px', fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: 4, marginBottom: 12 }}>По горизонтали</h3>
-                                        {crossword.clues.filter(c => c.direction === 'across').map((c, i) => (
-                                            <div key={i} style={{ fontSize: '12px', marginBottom: 8 }}>
-                                                <strong>{c.number}.</strong> {c.clue}
+                                {/* Student Info */}
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    marginBottom: 20,
+                                    fontSize: '14px',
+                                    gap: 30
+                                }}>
+                                    <div style={{ flex: 1, borderBottom: '1px solid #ccc', paddingBottom: 2 }}>
+                                        <span style={{ color: '#666', marginRight: 8 }}>Имя:</span>
+                                    </div>
+                                    <div style={{ width: 100, borderBottom: '1px solid #ccc', paddingBottom: 2 }}>
+                                        <span style={{ color: '#666', marginRight: 8 }}>Дата:</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
+                                    {/* Grid (Empty Cells) - Centered & Compact */}
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: `repeat(${crossword.gridSize}, 20px)`, // Reduced to 20px
+                                        gap: 0,
+                                        width: 'fit-content',
+                                        margin: '0 auto',
+                                        border: '2px solid #000'
+                                    }}>
+                                        {crossword.grid.flat().map((cell, i) => (
+                                            <div key={i} style={{
+                                                width: 20, height: 20, // Reduced to 20px
+                                                background: 'transparent',
+                                                border: cell ? '1px solid #000' : 'none',
+                                                display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start',
+                                                position: 'relative'
+                                            }}>
+                                                {cell?.number && (
+                                                    <span style={{ position: 'absolute', top: 0, left: 1, fontSize: '7px', fontWeight: 'bold', lineHeight: 1 }}>
+                                                        {cell.number}
+                                                    </span>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '14px', fontWeight: 'bold', borderBottom: '1px solid #000', paddingBottom: 4, marginBottom: 12 }}>По вертикали</h3>
-                                        {crossword.clues.filter(c => c.direction === 'down').map((c, i) => (
-                                            <div key={i} style={{ fontSize: '12px', marginBottom: 8 }}>
-                                                <strong>{c.number}.</strong> {c.clue}
+
+                                    {/* Clues - Compact Layout - Auto Grid */}
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '1fr 1fr',
+                                        gap: 16, // Reduced gap
+                                        background: '#FAFAFA',
+                                        padding: 12, // Reduced padding
+                                        borderRadius: 8,
+                                        fontSize: '10px', // Reduced font
+                                        alignContent: 'start'
+                                    }}>
+                                        <div>
+                                            <h3 style={{ fontSize: '11px', fontWeight: 'bold', borderBottom: '1px solid #E5E7EB', paddingBottom: 2, marginBottom: 4, color: '#4B5563' }}>
+                                                По горизонтали
+                                            </h3>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                {crossword.clues.filter(c => c.direction === 'across').map((c, i) => (
+                                                    <div key={i} style={{ lineHeight: 1.2 }}>
+                                                        <span style={{ fontWeight: 'bold', color: '#8B5CF6' }}>{c.number}.</span> {c.clue}
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '11px', fontWeight: 'bold', borderBottom: '1px solid #E5E7EB', paddingBottom: 2, marginBottom: 4, color: '#4B5563' }}>
+                                                По вертикали
+                                            </h3>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                                {crossword.clues.filter(c => c.direction === 'down').map((c, i) => (
+                                                    <div key={i} style={{ lineHeight: 1.2 }}>
+                                                        <span style={{ fontWeight: 'bold', color: '#8B5CF6' }}>{c.number}.</span> {c.clue}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
+                                </div>
+
+                                {/* Footer */}
+                                <div style={{
+                                    marginTop: 'auto',
+                                    paddingTop: 8,
+                                    borderTop: '1px dashed #ccc',
+                                    textAlign: 'center',
+                                    fontSize: '9px',
+                                    color: '#999',
+                                    display: 'flex',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <span>ClassPlay.uz</span>
+                                    <span>Удачи!</span>
                                 </div>
                             </div>
 
@@ -299,7 +391,7 @@ export default function CrosswordGenerator() {
                                 {/* Grid (Filled Cells) */}
                                 <div style={{
                                     display: 'grid',
-                                    gridTemplateColumns: `repeat(${crossword.gridSize}, 30px)`,
+                                    gridTemplateColumns: `repeat(${crossword.gridSize}, 24px)`, // Also reduced answer grid
                                     gap: 0,
                                     width: 'fit-content',
                                     margin: '0 auto 40px auto',
@@ -307,13 +399,13 @@ export default function CrosswordGenerator() {
                                 }}>
                                     {crossword.grid.flat().map((cell, i) => (
                                         <div key={i} style={{
-                                            width: 30, height: 30,
+                                            width: 24, height: 24, // Reduced answer grid
                                             background: 'transparent',
                                             border: cell ? '1px solid #000' : 'none',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             position: 'relative',
                                             fontWeight: 'bold',
-                                            fontSize: '14px'
+                                            fontSize: '12px' // Smaller font
                                         }}>
                                             {cell?.letter && cell.letter}
                                         </div>
@@ -329,68 +421,94 @@ export default function CrosswordGenerator() {
     )
 }
 
-// Fixed Grid Algorithm
-function buildGridFromWords(wordList) {
-    const gridSize = 15
-    const grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null))
-    const placedWords = []
+// Improved Grid Algorithm with Retries
+function buildGridFromWords(wordList, targetCount) {
+    const gridSize = 18 // Slightly larger grid for better fit chances
+    let bestResult = null
 
-    // Sort words by length
-    const sortedWords = [...wordList].sort((a, b) => b.word.length - a.word.length)
-        .map(w => ({ ...w, word: w.word.toUpperCase() }))
+    // Try multiple times to find the best layout
+    for (let attempt = 0; attempt < 10; attempt++) {
+        const grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null))
+        const placedWords = []
 
-    // Place first word
-    if (sortedWords.length > 0) {
-        const first = sortedWords[0]
-        const r = Math.floor(gridSize / 2)
-        const c = Math.floor((gridSize - first.word.length) / 2)
-        if (canPlace(grid, first.word, r, c, 'across')) {
-            placeWord(grid, first.word, r, c, 'across')
-            placedWords.push({ ...first, row: r, col: c, dir: 'across' })
+        // Shuffle words slightly to get different layouts, but keep long ones early
+        const shuffled = [...wordList].sort((a, b) => b.word.length - a.word.length)
+        if (attempt > 0) {
+            // Randomize order of same-length words or slight shuffle
+            shuffled.sort(() => Math.random() - 0.5)
+            shuffled.sort((a, b) => b.word.length - a.word.length) // Still keep long first mostly
         }
-    }
 
-    // Place remaining words
-    for (let i = 1; i < sortedWords.length; i++) {
-        const wordObj = sortedWords[i]
-        let best = null
+        // Place first word
+        if (shuffled.length > 0) {
+            const first = shuffled[0]
+            const r = Math.floor(gridSize / 2)
+            const c = Math.floor((gridSize - first.word.length) / 2)
+            if (canPlace(grid, first.word, r, c, 'across')) {
+                placeWord(grid, first.word, r, c, 'across')
+                placedWords.push({ ...first, row: r, col: c, dir: 'across' })
+            }
+        }
 
-        // Try to intersect
-        for (const pw of placedWords) {
-            for (let j = 0; j < pw.word.length; j++) {
-                const letter = pw.word[j]
-                const pR = pw.row + (pw.dir === 'across' ? 0 : j)
-                const pC = pw.col + (pw.dir === 'across' ? j : 0)
+        // Place remaining
+        for (let i = 1; i < shuffled.length; i++) {
+            const wordObj = shuffled[i]
+            let best = null
 
-                for (let k = 0; k < wordObj.word.length; k++) {
-                    if (wordObj.word[k] === letter) {
-                        const newDir = pw.dir === 'across' ? 'down' : 'across'
-                        const startR = pR - (newDir === 'across' ? 0 : k)
-                        const startC = pC - (newDir === 'across' ? k : 0)
+            for (const pw of placedWords) {
+                for (let j = 0; j < pw.word.length; j++) {
+                    const letter = pw.word[j]
+                    const pR = pw.row + (pw.dir === 'across' ? 0 : j)
+                    const pC = pw.col + (pw.dir === 'across' ? j : 0)
 
-                        if (canPlace(grid, wordObj.word, startR, startC, newDir)) {
-                            best = { row: startR, col: startC, dir: newDir }
-                            break
+                    for (let k = 0; k < wordObj.word.length; k++) {
+                        if (wordObj.word[k] === letter) {
+                            const newDir = pw.dir === 'across' ? 'down' : 'across'
+                            const startR = pR - (newDir === 'across' ? 0 : k)
+                            const startC = pC - (newDir === 'across' ? k : 0)
+
+                            if (canPlace(grid, wordObj.word, startR, startC, newDir)) {
+                                best = { row: startR, col: startC, dir: newDir }
+                                break
+                            }
                         }
                     }
+                    if (best) break
                 }
                 if (best) break
             }
-            if (best) break
+
+            if (best) {
+                placeWord(grid, wordObj.word, best.row, best.col, best.dir)
+                placedWords.push({ ...wordObj, row: best.row, col: best.col, dir: best.dir })
+            }
         }
 
-        if (best) {
-            placeWord(grid, wordObj.word, best.row, best.col, best.dir)
-            placedWords.push({ ...wordObj, row: best.row, col: best.col, dir: best.dir })
+        // Save best result (most words placed)
+        if (!bestResult || placedWords.length > bestResult.placedWords.length) {
+            bestResult = { grid, placedWords }
         }
+
+        // If we hit target, stop
+        if (bestResult.placedWords.length >= targetCount) break
     }
+
+    const { grid, placedWords } = bestResult
 
     // Numbering logic
     let clues = []
     let num = 1
 
+    // Sort placed words by position for correct numbering
+    // Note: The original logic iterated grid R, C to find starts. We stick to that.
+
+    // We need to re-scan the grid to assign numbers correctly in order
+    // But we need to map back to the placedWords to get clues.
+    // Let's attach numbering to the grid cells themselves during scan.
+
     for (let r = 0; r < gridSize; r++) {
         for (let c = 0; c < gridSize; c++) {
+            // Find words starting at r,c
             const startsAcross = placedWords.find(w => w.row === r && w.col === c && w.dir === 'across')
             const startsDown = placedWords.find(w => w.row === r && w.col === c && w.dir === 'down')
 
@@ -417,15 +535,31 @@ function canPlace(grid, word, row, col, dir) {
     if (row < 0 || col < 0) return false
     if (dir === 'across') {
         if (col + word.length > W) return false
+        if (col > 0 && grid[row][col - 1]) return false // Check left boundary
+        if (col + word.length < W && grid[row][col + word.length]) return false // Check right boundary
+
         for (let i = 0; i < word.length; i++) {
             const cell = grid[row][col + i]
             if (cell && cell.letter !== word[i]) return false
+            // Check vertical neighbors (unless it's an intersection)
+            if (!cell) {
+                if (row > 0 && grid[row - 1][col + i]) return false
+                if (row < H - 1 && grid[row + 1][col + i]) return false
+            }
         }
-    } else {
+    } else { // down
         if (row + word.length > H) return false
+        if (row > 0 && grid[row - 1][col]) return false // Check top boundary
+        if (row + word.length < H && grid[row + word.length][col]) return false // Check bottom boundary
+
         for (let i = 0; i < word.length; i++) {
             const cell = grid[row + i][col]
             if (cell && cell.letter !== word[i]) return false
+            // Check horizontal neighbors
+            if (!cell) {
+                if (col > 0 && grid[row + i][col - 1]) return false
+                if (col < W - 1 && grid[row + i][col + 1]) return false
+            }
         }
     }
     return true

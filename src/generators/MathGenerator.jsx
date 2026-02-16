@@ -13,7 +13,7 @@ export default function MathGenerator() {
     const printRef = useRef(null)
 
     const [settings, setSettings] = useState({
-        numQuestions: 10,
+        numQuestions: 20,
         operations: ['add', 'sub'],
         difficulty: 'medium',
         includeWordProblems: true
@@ -77,18 +77,26 @@ export default function MathGenerator() {
 
     const generateWorksheet = async () => {
         setLoading(true)
+        const cappedSettings = { ...settings, numQuestions: Math.min(settings.numQuestions, 30) }
+
         try {
             // Try API first
             const res = await fetch('/api/generate/math', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ settings, classContext: buildPrompt() })
+                body: JSON.stringify({ settings: cappedSettings, classContext: buildPrompt() })
             })
             const data = await res.json()
+
+            // Post-process to ensure limit
+            if (data.problems && data.problems.length > 30) {
+                data.problems = data.problems.slice(0, 30)
+            }
+
             setWorksheet(data)
         } catch {
             // Fallback: generate locally
-            const problems = generateLocal(settings, classCtx)
+            const problems = generateLocal(cappedSettings, classCtx)
             setWorksheet({ title: `Рабочий лист: ${classCtx.topic || 'Математика'}`, problems })
         }
         setLoading(false)
@@ -193,7 +201,7 @@ export default function MathGenerator() {
                     </div>
                 </div>
 
-                {/* Saved Items - Moved to bottom */}
+                {/* Saved Items */}
                 <div style={{ borderTop: '1px solid var(--cp-border)', paddingTop: 24, marginBottom: 32 }}>
                     <h3 style={{ fontSize: '1rem', marginBottom: 16 }}>Сохраненные</h3>
                     {savedItems.length === 0 ? (
@@ -249,32 +257,94 @@ export default function MathGenerator() {
                         {/* Paper Preview Element for capture */}
                         <div className="paper-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 40 }}>
                             {/* Visual Capture Area */}
-                            <div ref={printRef} className="paper-preview animate-slide" style={{ background: 'white', padding: '40px', minHeight: '800px', width: '595px', position: 'relative' }}>
+                            <div ref={printRef} className="paper-preview animate-slide" style={{
+                                background: 'white',
+                                padding: '40px',
+                                minHeight: '842px', // A4 height
+                                width: '595px', // A4 width at 72dpi
+                                position: 'relative',
+                                display: 'flex',
+                                flexDirection: 'column'
+                            }}>
 
-                                {/* Header */}
-                                <div style={{ textAlign: 'center', marginBottom: 40 }}>
-                                    <h2 style={{ fontFamily: 'Merriweather, serif', fontSize: '24px', marginBottom: 8 }}>{worksheet.title}</h2>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: 8, marginTop: 24, fontSize: '14px' }}>
-                                        <span>Имя: _______________________</span>
-                                        <span>Дата: _________</span>
+                                {/* Decorative Header */}
+                                <div style={{
+                                    borderBottom: '2px solid #3B82F6',
+                                    paddingBottom: 20,
+                                    marginBottom: 30,
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center'
+                                }}>
+                                    <div>
+                                        <h2 style={{
+                                            fontFamily: 'Merriweather, serif',
+                                            fontSize: '28px',
+                                            color: '#1E3A8A',
+                                            margin: 0
+                                        }}>{worksheet.title}</h2>
+                                        <div style={{ fontSize: '14px', color: '#666', marginTop: 4 }}>
+                                            Классная работа
+                                        </div>
+                                    </div>
+                                    <div style={{
+                                        width: 50,
+                                        height: 50,
+                                        background: '#EFF6FF',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#3B82F6'
+                                    }}>
+                                        <Sparkles size={24} />
                                     </div>
                                 </div>
 
-                                {/* Problems Grid */}
+                                {/* Student Info Row */}
+                                <div style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    marginBottom: 30,
+                                    fontSize: '16px',
+                                    gap: 40
+                                }}>
+                                    <div style={{ flex: 1, borderBottom: '1px solid #ccc', paddingBottom: 4 }}>
+                                        <span style={{ color: '#666', marginRight: 8 }}>Имя:</span>
+                                    </div>
+                                    <div style={{ width: 150, borderBottom: '1px solid #ccc', paddingBottom: 4 }}>
+                                        <span style={{ color: '#666', marginRight: 8 }}>Дата:</span>
+                                    </div>
+                                    <div style={{ width: 100, borderBottom: '1px solid #ccc', paddingBottom: 4 }}>
+                                        <span style={{ color: '#666', marginRight: 8 }}>Оценка:</span>
+                                    </div>
+                                </div>
+
+                                {/* Problems Grid - 3 Columns for compactness */}
                                 <div style={{
                                     display: 'grid',
-                                    gridTemplateColumns: settings.numQuestions > 15 ? '1fr 1fr' : '1fr',
-                                    columnGap: '60px',
-                                    rowGap: '20px'
+                                    gridTemplateColumns: '1fr 1fr 1fr', // 3 columns forced
+                                    columnGap: '32px',
+                                    rowGap: '24px', // Tighter rows
+                                    flex: 1
                                 }}>
                                     {worksheet.problems.map((p, i) => (
                                         <div key={i} style={{
                                             display: 'flex',
                                             alignItems: 'center',
-                                            fontSize: '16px',
-                                            breakInside: 'avoid'
+                                            fontSize: '16px', // Readable font size
+                                            breakInside: 'avoid',
+                                            background: i % 2 === 0 ? '#FAFAFA' : 'transparent', // Zebra striping
+                                            padding: '4px 8px',
+                                            borderRadius: 4
                                         }}>
-                                            <span style={{ width: '24px', fontWeight: 'bold' }}>{i + 1}.</span>
+                                            <span style={{
+                                                width: '28px',
+                                                fontWeight: 'bold',
+                                                color: '#3B82F6',
+                                                fontSize: '14px'
+                                            }}>{i + 1}.</span>
+
                                             {editIdx === i ? (
                                                 <input
                                                     className="input"
@@ -282,11 +352,11 @@ export default function MathGenerator() {
                                                     onBlur={e => editProblem(i, e.target.value)}
                                                     onKeyDown={e => e.key === 'Enter' && editProblem(i, e.target.value)}
                                                     autoFocus
-                                                    style={{ fontSize: '16px', padding: '2px', width: '120px' }}
+                                                    style={{ fontSize: '16px', padding: '0 4px', width: '100px', border: '1px solid #3B82F6' }}
                                                 />
                                             ) : (
-                                                <span onClick={() => setEditIdx(i)} style={{ cursor: 'pointer' }}>
-                                                    {p.question} = ______
+                                                <span onClick={() => setEditIdx(i)} style={{ cursor: 'pointer', fontFamily: 'monospace', fontSize: '18px' }}>
+                                                    {p.question} = ___
                                                 </span>
                                             )}
                                         </div>
@@ -294,18 +364,28 @@ export default function MathGenerator() {
                                 </div>
 
                                 {/* Footer */}
-                                <div style={{ position: 'absolute', bottom: 20, left: 0, right: 0, textAlign: 'center', fontSize: '10px', color: '#999' }}>
-                                    Создано с помощью ClassPlay AI
+                                <div style={{
+                                    marginTop: 'auto',
+                                    paddingTop: 20,
+                                    borderTop: '1px dashed #ccc',
+                                    textAlign: 'center',
+                                    fontSize: '10px',
+                                    color: '#999',
+                                    display: 'flex',
+                                    justifyContent: 'space-between'
+                                }}>
+                                    <span>ClassPlay.uz</span>
+                                    <span>Желаем успехов!</span>
                                 </div>
                             </div>
 
                             {/* Answer Key (Visual only, for teacher) */}
-                            <div className="paper-preview" style={{ background: 'white', padding: '40px', minHeight: '800px', width: '595px', position: 'relative' }}>
-                                <h2 style={{ textAlign: 'center', marginBottom: 24, color: '#991B1B' }}>Ответы</h2>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+                            <div className="paper-preview" style={{ background: 'white', padding: '40px', minHeight: '842px', width: '595px', position: 'relative' }}>
+                                <h2 style={{ textAlign: 'center', marginBottom: 24, color: '#DC2626' }}>Ответы для учителя</h2>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16 }}>
                                     {worksheet.problems.map((p, i) => (
                                         <div key={i} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
-                                            <strong>{i + 1}.</strong> {p.answer}
+                                            <strong style={{ color: '#DC2626' }}>{i + 1}.</strong> {p.answer}
                                         </div>
                                     ))}
                                 </div>
@@ -321,7 +401,7 @@ export default function MathGenerator() {
 
 function generateLocal(settings, ctx) {
     const ops = settings.operations
-    const n = settings.numQuestions
+    const n = Math.min(settings.numQuestions, 30) // Cap at 30
     const diff = settings.difficulty
     const maxNum = diff === 'easy' ? 10 : diff === 'medium' ? 50 : 100
 

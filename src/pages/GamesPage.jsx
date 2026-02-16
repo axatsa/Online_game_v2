@@ -3,10 +3,11 @@ import { useState } from 'react'
 import { Star, Play } from 'lucide-react'
 
 const GAMES_DATA = [
-    { id: 'brain-tug', title: 'Битва знаний', desc: 'Математическая дуэль двух команд', category: 'Математика', rating: 4.8, gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)' },
-    { id: 'memory-matrix', title: 'Memory Matrix', desc: 'Найди пары карточек', category: 'Логика', rating: 4.5, gradient: 'linear-gradient(135deg, #7C3AED, #6D28D9)' },
-    { id: 'math-snake', title: 'Math Snake', desc: 'Собери правильные ответы', category: 'Математика', rating: 4.3, gradient: 'linear-gradient(135deg, #059669, #047857)' },
-    { id: 'word-builder', title: 'Сборщик слов', desc: 'Составь слова из букв', category: 'Язык', rating: 4.6, gradient: 'linear-gradient(135deg, #D97706, #B45309)' },
+    { id: 'jeopardy', title: 'Своя Игра', desc: 'Командная викторина', category: 'Все', rating: 5.0, gradient: 'linear-gradient(135deg, #1e3a8a, #1d4ed8)', coverUrl: '' },
+    { id: 'balance', title: 'Весы', desc: 'Найди равновесие', category: 'Математика', rating: 4.7, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', coverUrl: '' },
+    { id: 'word-search', title: 'Филворд', desc: 'Найди слова', category: 'Язык', rating: 4.4, gradient: 'linear-gradient(135deg, #10b981, #059669)', coverUrl: '' },
+    { id: 'brain-tug', title: 'Битва знаний', desc: 'Математическая дуэль двух команд', category: 'Математика', rating: 4.8, gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', coverUrl: '' },
+    { id: 'memory-matrix', title: 'Memory Matrix', desc: 'Найди пары карточек', category: 'Логика', rating: 4.5, gradient: 'linear-gradient(135deg, #7C3AED, #6D28D9)', coverUrl: '' },
 ]
 
 const CATEGORIES = ['Все', 'Математика', 'Логика', 'Язык', 'Наука']
@@ -42,8 +43,15 @@ export default function GamesPage() {
             <div className="game-grid">
                 {filtered.map(game => (
                     <Link key={game.id} to={`/game/${game.id}`} className="card card-flush card-hover" style={{ textDecoration: 'none', color: 'inherit', overflow: 'hidden' }}>
-                        <div style={{ height: 140, background: game.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Play size={48} color="white" />
+                        <div style={{
+                            height: 140,
+                            background: game.coverUrl ? `url(${game.coverUrl}) center/cover` : game.gradient,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            position: 'relative'
+                        }}>
+                            {!game.coverUrl && <Play size={48} color="white" />}
                         </div>
                         <div style={{ padding: 20 }}>
                             <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>

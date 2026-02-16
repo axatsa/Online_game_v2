@@ -36,41 +36,8 @@ export function AuthProvider({ children }) {
             localStorage.setItem(USER_KEY, JSON.stringify(data.user))
             return { success: true }
         } catch (err) {
-            // Fallback: demo login for development
-            if (email === 'teacher@classplay.uz' && password === 'demo123') {
-                const demoUser = {
-                    id: 1,
-                    name: 'Дильноза Каримова',
-                    email: 'teacher@classplay.uz',
-                    role: 'teacher',
-                    school: 'Школа №42',
-                    license: true
-                }
-                const demoToken = 'demo-jwt-token'
-                setToken(demoToken)
-                setUser(demoUser)
-                localStorage.setItem(TOKEN_KEY, demoToken)
-                localStorage.setItem(USER_KEY, JSON.stringify(demoUser))
-                return { success: true }
-            }
-
-            if (email === 'admin@classplay.uz' && password === 'admin123') {
-                const adminUser = {
-                    id: 0,
-                    name: 'Администратор',
-                    email: 'admin@classplay.uz',
-                    role: 'admin',
-                    license: true
-                }
-                const adminToken = 'admin-jwt-token'
-                setToken(adminToken)
-                setUser(adminUser)
-                localStorage.setItem(TOKEN_KEY, adminToken)
-                localStorage.setItem(USER_KEY, JSON.stringify(adminUser))
-                return { success: true }
-            }
-
-            return { success: false, error: err.message || 'Неверный логин или пароль' }
+            console.error("Login Error:", err)
+            return { success: false, error: err.message || 'Ошибка подключения к серверу' }
         }
     }
 
