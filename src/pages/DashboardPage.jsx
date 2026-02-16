@@ -51,33 +51,35 @@ export default function DashboardPage() {
                 </p>
             </div>
 
-            {/* AI Context Card */}
-            <div className="card card-elevated" style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div className="flex items-center gap-md">
-                    <div style={{
-                        width: 48, height: 48, borderRadius: 12,
-                        background: hasContext ? 'var(--cp-green-light)' : 'var(--cp-amber-light)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        color: hasContext ? 'var(--cp-green)' : 'var(--cp-amber)'
-                    }}>
-                        <BookOpen size={24} />
-                    </div>
-                    <div>
-                        <div className="font-bold" style={{ fontSize: '0.9375rem' }}>
-                            {hasContext ? 'Контекст класса настроен' : 'Настройте контекст класса'}
+            {/* AI Context Card - Hide for Admin */}
+            {user?.role !== 'admin' && (
+                <div className="card card-elevated" style={{ marginBottom: 32, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className="flex items-center gap-md">
+                        <div style={{
+                            width: 48, height: 48, borderRadius: 12,
+                            background: hasContext ? 'var(--cp-green-light)' : 'var(--cp-amber-light)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: hasContext ? 'var(--cp-green)' : 'var(--cp-amber)'
+                        }}>
+                            <BookOpen size={24} />
                         </div>
-                        <div className="text-sm text-secondary">
-                            {hasContext
-                                ? `${classCtx.grade} • ${classCtx.topic} • ${classCtx.language === 'uz' ? 'Узб.' : 'Рус.'}`
-                                : 'AI будет генерировать материалы под ваш класс'
-                            }
+                        <div>
+                            <div className="font-bold" style={{ fontSize: '0.9375rem' }}>
+                                {hasContext ? 'Контекст класса настроен' : 'Настройте контекст класса'}
+                            </div>
+                            <div className="text-sm text-secondary">
+                                {hasContext
+                                    ? `${classCtx.grade} • ${classCtx.topic} • ${classCtx.language === 'uz' ? 'Узб.' : 'Рус.'}`
+                                    : 'AI будет генерировать материалы под ваш класс'
+                                }
+                            </div>
                         </div>
                     </div>
+                    <button className="btn btn-secondary btn-sm" onClick={() => setShowProfile(true)}>
+                        <Settings size={16} /> {hasContext ? 'Изменить' : 'Настроить'}
+                    </button>
                 </div>
-                <button className="btn btn-secondary btn-sm" onClick={() => setShowProfile(true)}>
-                    <Settings size={16} /> {hasContext ? 'Изменить' : 'Настроить'}
-                </button>
-            </div>
+            )}
 
             {/* Entry Point Cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>

@@ -10,14 +10,6 @@ const TOOLS = [
         color: 'var(--cp-amber)',
         bg: 'var(--cp-amber-light)'
     },
-    {
-        id: 'brain-tug',
-        title: 'Битва знаний',
-        desc: 'Перетягивание каната — 2 команды',
-        icon: Swords,
-        color: 'var(--cp-blue)',
-        bg: 'var(--cp-blue-light)'
-    }
 ]
 
 export default function ToolsPage() {

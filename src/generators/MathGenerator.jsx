@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useClassContext } from '../contexts/ClassContext'
 import { useAuth } from '../contexts/AuthContext'
-import { ArrowLeft, Sparkles, Download, Printer, Loader2, RefreshCw, Save } from 'lucide-react'
+import { ArrowLeft, Sparkles, Download, Printer, Loader2, RefreshCw, Save, FileText } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import SaveModal from '../components/SaveModal'
+import html2canvas from 'html2canvas'
 
 export default function MathGenerator() {
     const { classCtx, buildPrompt } = useClassContext()
     const { token } = useAuth()
     const navigate = useNavigate()
+    const printRef = useRef(null)
 
     const [settings, setSettings] = useState({
         numQuestions: 10,
@@ -19,6 +22,9 @@ export default function MathGenerator() {
     const [loading, setLoading] = useState(false)
     const [editIdx, setEditIdx] = useState(null)
     const [savedItems, setSavedItems] = useState([])
+
+    // Save Modal State
+    const [isSaveModalOpen, setIsSaveModalOpen] = useState(false)
 
     const set = (k, v) => setSettings(p => ({ ...p, [k]: v }))
 
@@ -37,11 +43,8 @@ export default function MathGenerator() {
         }
     }
 
-    const saveWorksheet = async () => {
+    const handleSave = async (name) => {
         if (!worksheet) return
-        const name = prompt('Введите название для сохранения:', worksheet.title)
-        if (!name) return
-
         try {
             await fetch('/api/save', {
                 method: 'POST',
@@ -102,77 +105,36 @@ export default function MathGenerator() {
     const printSheet = () => window.print()
 
     const downloadPDF = async () => {
+        if (!printRef.current) return
         const { default: jsPDF } = await import('jspdf')
-        const doc = new jsPDF()
-        const isTwoCol = worksheet.problems.length > 15
-        const midPoint = Math.ceil(worksheet.problems.length / 2)
 
-        // --- Page 1: Student Sheet ---
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(18)
-        doc.text(worksheet.title, 105, 20, { align: 'center' })
+        try {
+            const canvas = await html2canvas(printRef.current, { scale: 2, useCORS: true })
+            const imgData = canvas.toDataURL('image/png')
 
-        doc.setFontSize(10)
-        doc.setFont('helvetica', 'normal')
-        doc.text(`Имя: ____________________   Дата: __________`, 20, 35)
+            // A4 size
+            const pdf = new jsPDF('p', 'mm', 'a4')
+            const w = pdf.internal.pageSize.getWidth()
+            const h = (canvas.height * w) / canvas.width
 
-        doc.setFontSize(12)
-
-        worksheet.problems.forEach((p, i) => {
-            let x = 20
-            let y = 60 + (i * 12)
-
-            if (isTwoCol) {
-                if (i < midPoint) {
-                    x = 20
-                    y = 60 + (i * 12)
-                } else {
-                    x = 115
-                    y = 60 + ((i - midPoint) * 12)
-                }
-            } else {
-                if (y > 260) { doc.addPage(); y = 60 }
-            }
-
-            doc.text(`${i + 1}.  ${p.question} = ______`, x, y)
-        })
-
-        // Footer
-        doc.setFontSize(8)
-        doc.text('Создано с помощью ClassPlay AI', 105, 285, { align: 'center' })
-
-        // --- Page 2: Answer Key ---
-        doc.addPage()
-        doc.setFont('helvetica', 'bold')
-        doc.setFontSize(16)
-        doc.text(`Ответы: ${worksheet.title}`, 105, 20, { align: 'center' })
-        doc.setTextColor(153, 27, 27) // Burgundy for answers
-
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(12)
-
-        worksheet.problems.forEach((p, i) => {
-            let x = 20
-            let y = 60 + (i * 10)
-
-            if (isTwoCol) {
-                if (i < midPoint) {
-                    x = 20
-                    y = 60 + (i * 10)
-                } else {
-                    x = 115
-                    y = 60 + ((i - midPoint) * 10)
-                }
-            }
-
-            doc.text(`${i + 1}.  ${p.answer}`, x, y)
-        })
-
-        doc.save(`${worksheet.title}.pdf`)
+            pdf.addImage(imgData, 'PNG', 0, 0, w, h)
+            pdf.save(`${worksheet.title}.pdf`)
+        } catch (e) {
+            console.error("PDF Error", e)
+            alert("Ошибка создания PDF")
+        }
     }
 
     return (
         <div className="split-view">
+            {/* Save Modal */}
+            <SaveModal
+                isOpen={isSaveModalOpen}
+                onClose={() => setIsSaveModalOpen(false)}
+                onSave={handleSave}
+                defaultValue={worksheet?.title}
+            />
+
             {/* Sidebar */}
             <div className="split-sidebar">
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate('/generators')} style={{ marginBottom: 24 }}>
@@ -181,6 +143,10 @@ export default function MathGenerator() {
 
                 <h2 style={{ marginBottom: 4 }}>Математика</h2>
                 <p className="text-secondary text-sm" style={{ marginBottom: 24 }}>Генератор рабочих листов</p>
+
+                <button className="btn btn-primary btn-lg btn-full" onClick={generateWorksheet} disabled={loading} style={{ marginBottom: 32 }}>
+                    {loading ? <><Loader2 size={18} className="spin" /> Генерация...</> : <><Sparkles size={18} /> Сгенерировать</>}
+                </button>
 
                 {/* Operations */}
                 <div className="form-group" style={{ marginBottom: 20 }}>
@@ -227,20 +193,21 @@ export default function MathGenerator() {
                     </div>
                 </div>
 
-                <button className="btn btn-primary btn-lg btn-full" onClick={generateWorksheet} disabled={loading}>
-                    {loading ? <><Loader2 size={18} className="spin" /> Генерация...</> : <><Sparkles size={18} /> Сгенерировать</>}
-                </button>
-
-                {/* Saved Items */}
-                {savedItems.length > 0 && (
-                    <div style={{ marginTop: 32, borderTop: '1px solid var(--cp-border)', paddingTop: 24 }}>
-                        <h3 style={{ fontSize: '1rem', marginBottom: 12 }}>Сохраненные</h3>
+                {/* Saved Items - Moved to bottom */}
+                <div style={{ borderTop: '1px solid var(--cp-border)', paddingTop: 24, marginBottom: 32 }}>
+                    <h3 style={{ fontSize: '1rem', marginBottom: 16 }}>Сохраненные</h3>
+                    {savedItems.length === 0 ? (
+                        <div className="text-sm text-secondary text-center" style={{ padding: 20, background: 'var(--cp-bg)', borderRadius: 8 }}>
+                            Вы пока ничего не сохранили
+                        </div>
+                    ) : (
                         <div className="flex-col gap-xs">
                             {savedItems.map(item => (
                                 <button key={item.id} className="btn btn-secondary btn-sm btn-full"
-                                    style={{ justifyContent: 'flex-start', textAlign: 'left', height: 'auto', padding: '8px 12px' }}
+                                    style={{ justifyContent: 'flex-start', textAlign: 'left', height: 'auto', padding: '10px' }}
                                     onClick={() => loadItem(item.id)}>
-                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    <FileText size={16} style={{ flexShrink: 0, color: 'var(--cp-text-secondary)' }} />
+                                    <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: 8 }}>
                                         <div style={{ fontWeight: 500 }}>{item.name}</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--cp-text-muted)' }}>
                                             {new Date(item.created_at).toLocaleDateString()}
@@ -249,8 +216,8 @@ export default function MathGenerator() {
                                 </button>
                             ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
 
             {/* Main Preview */}
@@ -267,7 +234,7 @@ export default function MathGenerator() {
                             <button className="btn btn-ghost btn-sm" onClick={generateWorksheet} title="Перегенерировать">
                                 <RefreshCw size={14} />
                             </button>
-                            <button className="btn btn-ghost btn-sm" onClick={saveWorksheet} title="Сохранить">
+                            <button className="btn btn-ghost btn-sm" onClick={() => setIsSaveModalOpen(true)} title="Сохранить">
                                 <Save size={14} /> Сохранить
                             </button>
                             <div style={{ flex: 1 }} />
@@ -279,43 +246,72 @@ export default function MathGenerator() {
                             </button>
                         </div>
 
-                        {/* Paper */}
-                        <div className="paper-preview animate-slide" style={settings.numQuestions > 15 ? { display: 'grid', gridTemplateColumns: '1fr 1fr', columnGap: 40 } : {}}>
-                            <div style={{ gridColumn: '1 / -1' }}>
-                                <h2 style={{ fontFamily: 'var(--cp-font-heading)', textAlign: 'center' }}>{worksheet.title}</h2>
-                                <div style={{ borderBottom: '1px solid var(--cp-border)', marginBottom: 24 }} />
+                        {/* Paper Preview Element for capture */}
+                        <div className="paper-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 40 }}>
+                            {/* Visual Capture Area */}
+                            <div ref={printRef} className="paper-preview animate-slide" style={{ background: 'white', padding: '40px', minHeight: '800px', width: '595px', position: 'relative' }}>
+
+                                {/* Header */}
+                                <div style={{ textAlign: 'center', marginBottom: 40 }}>
+                                    <h2 style={{ fontFamily: 'Merriweather, serif', fontSize: '24px', marginBottom: 8 }}>{worksheet.title}</h2>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #000', paddingBottom: 8, marginTop: 24, fontSize: '14px' }}>
+                                        <span>Имя: _______________________</span>
+                                        <span>Дата: _________</span>
+                                    </div>
+                                </div>
+
+                                {/* Problems Grid */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: settings.numQuestions > 15 ? '1fr 1fr' : '1fr',
+                                    columnGap: '60px',
+                                    rowGap: '20px'
+                                }}>
+                                    {worksheet.problems.map((p, i) => (
+                                        <div key={i} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            fontSize: '16px',
+                                            breakInside: 'avoid'
+                                        }}>
+                                            <span style={{ width: '24px', fontWeight: 'bold' }}>{i + 1}.</span>
+                                            {editIdx === i ? (
+                                                <input
+                                                    className="input"
+                                                    defaultValue={p.question}
+                                                    onBlur={e => editProblem(i, e.target.value)}
+                                                    onKeyDown={e => e.key === 'Enter' && editProblem(i, e.target.value)}
+                                                    autoFocus
+                                                    style={{ fontSize: '16px', padding: '2px', width: '120px' }}
+                                                />
+                                            ) : (
+                                                <span onClick={() => setEditIdx(i)} style={{ cursor: 'pointer' }}>
+                                                    {p.question} = ______
+                                                </span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Footer */}
+                                <div style={{ position: 'absolute', bottom: 20, left: 0, right: 0, textAlign: 'center', fontSize: '10px', color: '#999' }}>
+                                    Создано с помощью ClassPlay AI
+                                </div>
                             </div>
 
-                            {worksheet.problems.map((p, i) => (
-                                <div key={i}
-                                    onClick={() => setEditIdx(i)}
-                                    style={{
-                                        padding: '10px 0',
-                                        fontSize: '1.0625rem',
-                                        cursor: 'pointer',
-                                        borderBottom: '1px dotted var(--cp-border)',
-                                        display: 'flex', justifyContent: 'space-between',
-                                        breakInside: 'avoid'
-                                    }}
-                                >
-                                    {editIdx === i ? (
-                                        <input
-                                            className="input"
-                                            defaultValue={p.question}
-                                            onBlur={e => editProblem(i, e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && editProblem(i, e.target.value)}
-                                            autoFocus
-                                            style={{ fontSize: '1.0625rem' }}
-                                        />
-                                    ) : (
-                                        <>
-                                            <span>{i + 1}. {p.question}</span>
-                                            <span style={{ color: 'var(--cp-text-muted)' }}>= ____</span>
-                                        </>
-                                    )}
+                            {/* Answer Key (Visual only, for teacher) */}
+                            <div className="paper-preview" style={{ background: 'white', padding: '40px', minHeight: '800px', width: '595px', position: 'relative' }}>
+                                <h2 style={{ textAlign: 'center', marginBottom: 24, color: '#991B1B' }}>Ответы</h2>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
+                                    {worksheet.problems.map((p, i) => (
+                                        <div key={i} style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                                            <strong>{i + 1}.</strong> {p.answer}
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
+                            </div>
                         </div>
+
                     </>
                 )}
             </div>

@@ -8,8 +8,7 @@ const COLORS = [
 
 export default function RouletteTool({ onExit }) {
     const [students, setStudents] = useState([
-        'Алишер', 'Гулноза', 'Бобур', 'Дильноза', 'Фарход',
-        'Малика', 'Нодир', 'Шахло', 'Отабек', 'Зарина'
+        'Алина', 'Тимур', 'Зарина', 'Дамир'
     ])
     const [newName, setNewName] = useState('')
     const [spinning, setSpinning] = useState(false)

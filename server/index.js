@@ -37,7 +37,8 @@ let db
       name TEXT,
       role TEXT DEFAULT 'teacher',
       school TEXT,
-      subscription_end TEXT
+      subscription_end TEXT,
+      generated_count INTEGER DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS classes (
@@ -80,6 +81,16 @@ let db
 })()
 
 // --- Middleware ---
+
+// Database readiness check
+const checkDbReady = (req, res, next) => {
+    if (!db) {
+        console.error("Database not ready yet!")
+        return res.status(503).json({ error: 'Service temporarily unavailable, database initializing' })
+    }
+    next()
+}
+
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization']
     const token = authHeader && authHeader.split(' ')[1]
@@ -95,7 +106,7 @@ const authenticateToken = (req, res, next) => {
 // --- Routes ---
 
 // Login
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', checkDbReady, async (req, res) => {
     const { email, password } = req.body
     const user = await db.get("SELECT * FROM users WHERE email = ?", email)
 
@@ -108,7 +119,7 @@ app.post('/api/auth/login', async (req, res) => {
 })
 
 // Generate Math (AI)
-app.post('/api/generate/math', authenticateToken, async (req, res) => {
+app.post('/api/generate/math', checkDbReady, authenticateToken, async (req, res) => {
     try {
         const { settings, classContext } = req.body
 
@@ -135,39 +146,126 @@ app.post('/api/generate/math', authenticateToken, async (req, res) => {
 })
 
 // Generate Crossword (AI)
-app.post('/api/generate/crossword', authenticateToken, async (req, res) => {
+app.post('/api/generate/crossword', checkDbReady, authenticateToken, async (req, res) => {
+    console.log("POST /api/generate/crossword")
     try {
         const { topic, wordsCount, language } = req.body
 
-        // Step 1: Generate words via AI
         const prompt = `
-      Сгенерируй список из ${wordsCount} слов и подсказок для кроссворда на тему "${topic}".
-      Язык: ${language === 'uz' ? 'Узбекский' : 'Русский'}.
-      Верни JSON: { "check": "OK", "words": [ { "word": "СЛОВО", "clue": "Подсказка" } ] }
-      Слова должны быть существительными в именительном падеже.
+      Generates a crossword puzzle word list.
+      Topic: "${topic}"
+      Language: ${language === 'uz' ? 'Uzbek' : 'Russian'}
+      Count: ${wordsCount || 10} words
+      
+      Output ONLY strict JSON:
+      {
+        "words": [
+          { "word": "WORD", "clue": "Clue definition" }
+        ]
+      }
+      Words must be nouns.
     `
+        console.log("Sending prompt to OpenAI...")
 
-        const completion = await openai.chat.completions.create({
-            messages: [{ role: "system", content: "You are a helpful assistant that generates JSON." }, { role: "user", content: prompt }],
-            model: "gpt-4o-mini",
-            response_format: { type: "json_object" }
-        });
+        try {
+            const completion = await openai.chat.completions.create({
+                messages: [
+                    { role: "system", content: "You are a crossword generator. Output strict JSON only. No markdown formatting." },
+                    { role: "user", content: prompt }
+                ],
+                model: "gpt-4o-mini",
+                response_format: { type: "json_object" },
+                temperature: 0.7,
+            });
 
-        const aiData = JSON.parse(completion.choices[0].message.content)
+            const content = completion.choices[0].message.content
+            console.log("AI Response:", content)
 
-        // Note: The logic to build the grid is currently in frontend (CrosswordGenerator). 
-        // Ideally we send words back and frontend builds grid, OR we build grid here. 
-        // For MVP, let's send words back and let frontend retry grid building if needed.
+            if (!content) throw new Error("Empty AI response")
 
-        res.json(aiData)
+            const aiData = JSON.parse(content)
+
+            // Increment Stats
+            await db.run("UPDATE users SET generated_count = generated_count + 1 WHERE id = ?", req.user.id)
+
+            res.json(aiData)
+        } catch (aiError) {
+            console.error("AI Error:", aiError)
+            res.status(200).json({
+                words: [],
+                error: "AI_FAILED",
+                message: aiError.message
+            })
+        }
     } catch (error) {
-        console.error(error)
-        res.status(500).json({ error: 'AI generation failed' })
+        console.error("Server Error:", error)
+        res.status(500).json({ error: 'Internal Server Error' })
+    }
+})
+
+// --- Admin Routes ---
+
+// Get All Users (Admin Only)
+app.get('/api/admin/users', checkDbReady, authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.sendStatus(403)
+
+    try {
+        const users = await db.all("SELECT id, name, email, role, school, subscription_end, generated_count FROM users ORDER BY id DESC")
+        res.json(users)
+    } catch (e) {
+        console.error("GET Users Error:", e)
+        res.sendStatus(500)
+    }
+})
+
+// Create User (Admin Only)
+app.post('/api/admin/users', checkDbReady, authenticateToken, async (req, res) => {
+    console.log("POST /api/admin/users", req.body)
+    if (req.user.role !== 'admin') return res.sendStatus(403)
+
+    const { name, email, password, school, role } = req.body
+
+    try {
+        const existing = await db.get("SELECT id FROM users WHERE email = ?", email)
+        if (existing) return res.status(400).json({ error: 'User already exists' })
+
+        const hash = await bcrypt.hash(password || '123456', 10)
+
+        await db.run(
+            "INSERT INTO users (name, email, password, school, role, subscription_end) VALUES (?, ?, ?, ?, ?, ?)",
+            name, email, hash, school || '', role || 'teacher', '2025-12-31'
+        )
+
+        res.json({ success: true })
+    } catch (e) {
+        console.error("CREATE User Error:", e)
+        res.status(500).json({ error: 'Create failed' })
+    }
+})
+
+// Update User (Admin Only)
+app.put('/api/admin/users/:id', checkDbReady, authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.sendStatus(403)
+
+    const { id } = req.params
+    const { name, email, password, school } = req.body
+
+    try {
+        if (password) {
+            const hash = await bcrypt.hash(password, 10)
+            await db.run("UPDATE users SET name = ?, email = ?, password = ?, school = ? WHERE id = ?", name, email, hash, school, id)
+        } else {
+            await db.run("UPDATE users SET name = ?, email = ?, school = ? WHERE id = ?", name, email, school, id)
+        }
+        res.json({ success: true })
+    } catch (e) {
+        console.error("UPDATE User Error:", e)
+        res.status(500).json({ error: 'Update failed' })
     }
 })
 
 // Save Item
-app.post('/api/save', authenticateToken, async (req, res) => {
+app.post('/api/save', checkDbReady, authenticateToken, async (req, res) => {
     const { type, name, data } = req.body
     const userId = req.user.id
 
@@ -178,7 +276,7 @@ app.post('/api/save', authenticateToken, async (req, res) => {
 })
 
 // List Saved
-app.get('/api/saved/:type', authenticateToken, async (req, res) => {
+app.get('/api/saved/:type', checkDbReady, authenticateToken, async (req, res) => {
     const { type } = req.params
     const userId = req.user.id
 
@@ -187,7 +285,7 @@ app.get('/api/saved/:type', authenticateToken, async (req, res) => {
 })
 
 // Load Saved
-app.get('/api/saved/item/:id', authenticateToken, async (req, res) => {
+app.get('/api/saved/item/:id', checkDbReady, authenticateToken, async (req, res) => {
     const { id } = req.params
     const userId = req.user.id
 

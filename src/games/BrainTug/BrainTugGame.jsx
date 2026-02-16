@@ -5,21 +5,23 @@ import { Clock, Check, X, ArrowLeft } from 'lucide-react'
 /* =========================================
    HELPER: Generate Math/Logic/Science Question
    ========================================= */
-function generateQuestion(topic, ops) {
+function generateQuestion(topic, ops, difficulty = 'medium') {
+    const max = difficulty === 'easy' ? 10 : difficulty === 'medium' ? 50 : 100
+
     // Logic Questions (Sequences)
     if (topic === 'logic') {
         const type = Math.random() > 0.5 ? 'seq' : 'pattern'
         if (type === 'seq') {
-            const start = Math.floor(Math.random() * 5) + 1
-            const step = Math.floor(Math.random() * 3) + 1
+            const start = Math.floor(Math.random() * max / 2) + 1
+            const step = Math.floor(Math.random() * 5) + 1
             return { text: `${start}, ${start + step}, ${start + step * 2}, ?`, correct: start + step * 3, id: Math.random() }
         } else {
-            const a = Math.floor(Math.random() * 5) + 1
+            const a = Math.floor(Math.random() * (max / 5)) + 1
             return { text: `${a} -> ${a * 2}, ${a + 1} -> ?`, correct: (a + 1) * 2, id: Math.random() }
         }
     }
 
-    // Science Questions (Facts with numeric answers)
+    // Science Questions (Facts with numeric answers) - Static for now, could be expanded
     if (topic === 'science') {
         const facts = [
             { q: 'Ног у паука?', a: 8 },
@@ -43,26 +45,27 @@ function generateQuestion(topic, ops) {
 
     switch (op) {
         case 'add':
-            a = Math.floor(Math.random() * 9) + 1
-            b = Math.floor(Math.random() * 9) + 1
+            a = Math.floor(Math.random() * max) + 1
+            b = Math.floor(Math.random() * max) + 1
             ans = a + b
             sign = '+'
             break
         case 'sub':
-            a = Math.floor(Math.random() * 10) + 5
-            b = Math.floor(Math.random() * 5) + 1
+            a = Math.floor(Math.random() * max) + 5
+            b = Math.floor(Math.random() * a) + 1 // Ensure positive result
             ans = a - b
             sign = '-'
             break
         case 'mul':
-            a = Math.floor(Math.random() * 9) + 1
-            b = Math.floor(Math.random() * 5) + 1
+            const mMax = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 12
+            a = Math.floor(Math.random() * mMax) + 1
+            b = Math.floor(Math.random() * mMax) + 1
             ans = a * b
             sign = '×'
             break
         case 'div':
-            b = Math.floor(Math.random() * 5) + 2
-            ans = Math.floor(Math.random() * 5) + 1
+            b = Math.floor(Math.random() * (difficulty === 'easy' ? 5 : 9)) + 2
+            ans = Math.floor(Math.random() * (difficulty === 'easy' ? 5 : 10)) + 1
             a = b * ans
             sign = '÷'
             break
@@ -155,9 +158,10 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
     useEffect(() => {
         const ops = config.mathOps || ['add']
         const topic = config.topic || 'math'
-        setP1Q(generateQuestion(topic, ops))
-        setP2Q(generateQuestion(topic, ops))
-    }, [])
+        const diff = config.difficulty || 'medium'
+        setP1Q(generateQuestion(topic, ops, diff))
+        setP2Q(generateQuestion(topic, ops, diff))
+    }, [config])
 
     // Timer
     useEffect(() => {
@@ -215,18 +219,19 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
             // Correct!
             const topic = config.topic || 'math'
             const ops = config.mathOps || ['add']
+            const diff = config.difficulty || 'medium'
 
             if (isP1) {
                 setP1Score(s => s + 1)
                 setRopePos(p => Math.max(p - 10, -100)) // Blue pulls Left (negative)
                 setAnimState('pull-blue')
-                setP1Q(generateQuestion(topic, ops))
+                setP1Q(generateQuestion(topic, ops, diff))
                 setP1Input('')
             } else {
                 setP2Score(s => s + 1)
                 setRopePos(p => Math.min(p + 10, 100)) // Red pulls Right (positive)
                 setAnimState('pull-red')
-                setP2Q(generateQuestion(topic, ops))
+                setP2Q(generateQuestion(topic, ops, diff))
                 setP2Input('')
             }
 

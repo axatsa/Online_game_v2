@@ -33,6 +33,12 @@ export default function AppLayout() {
                         <Gamepad2 size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
                         Игры
                     </NavLink>
+                    {user?.role === 'admin' && (
+                        <NavLink to="/admin" className={({ isActive }) => isActive ? 'active' : ''}>
+                            <Settings size={16} style={{ marginRight: 6, verticalAlign: -2 }} />
+                            Админ-панель
+                        </NavLink>
+                    )}
                 </nav>
 
                 <div className="app-profile">
