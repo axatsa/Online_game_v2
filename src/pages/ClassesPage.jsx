@@ -28,9 +28,9 @@ export default function ClassesPage() {
     return (
         <div className="p-6 max-w-7xl mx-auto min-h-screen">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
                 <div>
-                    <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight mb-3">Мои классы</h1>
+                    <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-800 tracking-tight mb-2">Мои классы</h1>
                     <p className="text-slate-500 text-lg max-w-2xl">
                         Создавайте классы, добавляйте учеников и настраивайте контекст для персонализированных заданий.
                     </p>
@@ -73,8 +73,8 @@ export default function ClassesPage() {
                         <div
                             key={cls.id}
                             className={`group relative bg-white rounded-2xl transition-all duration-300 overflow-hidden flex flex-col ${activeClassId == cls.id
-                                    ? 'ring-2 ring-primary shadow-xl shadow-primary/10'
-                                    : 'border border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-300'
+                                ? 'ring-2 ring-primary shadow-xl shadow-primary/10'
+                                : 'border border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 hover:border-slate-300'
                                 }`}
                         >
                             {/* Active Indicator Strip */}

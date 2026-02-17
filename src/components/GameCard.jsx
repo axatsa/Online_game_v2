@@ -16,7 +16,7 @@ export default function GameCard({ game }) {
             className="group bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full"
         >
             {/* Cover Image */}
-            <div className="relative h-48 overflow-hidden bg-slate-100">
+            <div className="relative h-40 overflow-hidden bg-slate-100">
                 <div
                     className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-700"
                     style={{

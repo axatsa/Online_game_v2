@@ -44,14 +44,14 @@ export default function DashboardPage() {
     const today = new Date().toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' })
 
     return (
-        <div className="space-y-8 animate-fade-up">
+        <div className="space-y-6 animate-fade-up">
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-900">
+                    <h1 className="text-2xl lg:text-3xl font-bold text-slate-900">
                         Здравствуйте, {firstName} 👋
                     </h1>
-                    <p className="text-slate-500 mt-1 capitalize">
+                    <p className="text-slate-500 mt-0.5 capitalize text-sm lg:text-base">
                         {today} • Хорошего учебного дня!
                     </p>
                 </div>
@@ -62,37 +62,37 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* Context Card (Killer Feature) */}
+            {/* Context Card (Compact) */}
             {user?.role !== 'admin' && (
-                <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-16 -mt-16 z-0 group-hover:scale-105 transition-transform duration-700"></div>
+                <div className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 w-48 h-48 bg-slate-50 rounded-full -mr-10 -mt-10 z-0 group-hover:scale-105 transition-transform duration-700"></div>
 
-                    <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                        <div className="flex items-center gap-5">
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
                             <div className={`
-                                w-14 h-14 rounded-xl flex items-center justify-center shadow-sm
+                                w-12 h-12 rounded-xl flex items-center justify-center shadow-sm shrink-0
                                 ${hasContext ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}
                             `}>
-                                <BookOpen size={28} />
+                                <BookOpen size={24} />
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-slate-900">
+                                <h2 className="text-base lg:text-lg font-bold text-slate-900 leading-tight">
                                     {hasContext ? 'Контекст класса активен' : 'Настройте контекст класса'}
                                 </h2>
-                                <p className="text-slate-500 text-sm mt-1 max-w-lg">
+                                <p className="text-slate-500 text-xs lg:text-sm mt-1 max-w-lg leading-snug">
                                     {hasContext
                                         ? `${classCtx.grade} • ${classCtx.topic} • ${classCtx.language === 'uz' ? 'O\'zbek' : 'Русский'}`
-                                        : 'AI адаптирует генерацию материалов под интересы и уровень ваших учеников.'
+                                        : 'AI адаптирует материалы под ваших учеников.'
                                     }
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={() => setShowProfile(true)}
-                            className="btn btn-outline border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 gap-2 bg-white shadow-sm"
+                            className="btn btn-sm btn-outline border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700 gap-2 bg-white shadow-sm whitespace-nowrap"
                         >
-                            <Settings size={18} />
-                            {hasContext ? 'Настроить' : 'Создать контекст'}
+                            <Settings size={16} />
+                            {hasContext ? 'Настроить' : 'Создать'}
                         </button>
                     </div>
                 </div>
@@ -105,21 +105,23 @@ export default function DashboardPage() {
                         key={action.link}
                         to={action.link}
                         className={`
-                            group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300
-                            hover:-translate-y-1 relative overflow-hidden
+                            group bg-white p-5 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300
+                            hover:-translate-y-1 relative overflow-hidden flex flex-col justify-between
                         `}
                     >
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${action.bg} ${action.color}`}>
-                            <action.icon size={24} />
+                        <div>
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${action.bg} ${action.color}`}>
+                                <action.icon size={20} />
+                            </div>
+                            <h3 className="text-base font-bold text-slate-900 group-hover:text-red-700 transition-colors">
+                                {action.title}
+                            </h3>
+                            <p className="text-slate-500 text-xs mt-1 mb-4 leading-snug">
+                                {action.desc}
+                            </p>
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 group-hover:text-red-700 transition-colors">
-                            {action.title}
-                        </h3>
-                        <p className="text-slate-500 text-sm mt-1 mb-6">
-                            {action.desc}
-                        </p>
-                        <div className={`flex items-center gap-2 text-sm font-medium ${action.color}`}>
-                            Открыть <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                        <div className={`flex items-center gap-2 text-xs font-medium ${action.color}`}>
+                            Открыть <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
                         </div>
                     </Link>
                 ))}

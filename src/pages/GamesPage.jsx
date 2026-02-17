@@ -63,11 +63,11 @@ export default function GamesPage() {
     const filtered = filter === 'Все' ? GAMES_DATA : GAMES_DATA.filter(g => g.category === filter)
 
     return (
-        <div className="space-y-8 animate-fade-up">
+        <div className="space-y-6 animate-fade-up">
             {/* Header */}
             <div>
-                <h1 className="text-3xl font-bold text-slate-900 mb-2">Библиотека Игр</h1>
-                <p className="text-slate-500 max-w-2xl">
+                <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 mb-2">Библиотека Игр</h1>
+                <p className="text-slate-500 max-w-2xl text-sm lg:text-base">
                     Интерактивные игры для вовлечения всего класса. Запускайте прямо на доске.
                 </p>
             </div>
