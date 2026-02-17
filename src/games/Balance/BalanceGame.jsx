@@ -1,64 +1,135 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { ArrowLeft, RotateCcw, Trophy, CheckCircle2, XCircle } from 'lucide-react'
 
 // Physics constants
 const MAX_TILT = 20 // degrees
 const SENSITIVITY = 1.5
 
-const LEVELS = [
-    {
-        id: 1,
-        target: 50,
-        options: [
-            { id: 'o1', val: 50, label: '25 + 25' },
-            { id: 'o2', val: 45, label: '40 + 5' },
-            { id: 'o3', val: 55, label: '60 - 5' },
-            { id: 'o4', val: 50, label: '100 : 2' },
-        ]
-    },
-    {
-        id: 2,
-        target: 80,
-        options: [
-            { id: 'o1', val: 80, label: '40 x 2' },
-            { id: 'o2', val: 70, label: '35 + 35' },
-            { id: 'o3', val: 90, label: '100 - 10' },
-            { id: 'o4', val: 80, label: '20 + 60' },
-        ]
-    },
-    {
-        id: 3,
-        target: 24,
-        options: [
-            { id: 'o1', val: 24, label: '12 + 12' },
-            { id: 'o2', val: 20, label: '4 x 5' },
-            { id: 'o3', val: 24, label: '3 x 8' },
-            { id: 'o4', val: 25, label: '5 x 5' },
-        ]
-    },
-]
+const generateLevel = (difficulty, index) => {
+    let target, options
+    const variance = difficulty === 'hard' ? 20 : difficulty === 'medium' ? 10 : 5
+
+    // Helper to cleanup expressions (e.g. 5 + -3 -> 5 - 3)
+    const cleanExpr = (expr) => expr.replace(/\+ -/g, '- ')
+
+    if (difficulty === 'easy') {
+        // Numbers 1-20, Add/Sub
+        target = Math.floor(Math.random() * 15) + 5 // 5 to 20
+        options = []
+        // Generate valid options
+        for (let i = 0; i < 4; i++) {
+            if (i < 2) { // Correct options
+                const a = Math.floor(Math.random() * target)
+                const b = target - a
+                options.push({ val: target, label: `${a} + ${b}` })
+            } else { // Distractors
+                const val = target + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 5 + 1)
+                const a = Math.floor(Math.random() * val)
+                const b = val - a
+                options.push({ val: val, label: `${a} + ${b}` })
+            }
+        }
+    } else if (difficulty === 'medium') {
+        // Numbers 1-50, Add/Sub/Mul
+        target = Math.floor(Math.random() * 40) + 10 // 10 to 50
+        options = []
+        for (let i = 0; i < 5; i++) {
+            const isCorrect = i < 2
+            const val = isCorrect ? target : target + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 8 + 1)
+
+            // Random operation type
+            const type = Math.random()
+            if (type < 0.4) { // Add
+                const a = Math.floor(Math.random() * val)
+                options.push({ val, label: `${a} + ${val - a}` })
+            } else if (type < 0.7) { // Sub
+                const a = val + Math.floor(Math.random() * 20)
+                options.push({ val, label: `${a} - ${a - val}` })
+            } else { // Mul (simple)
+                // Find factors
+                const factors = []
+                for (let k = 2; k <= Math.sqrt(val); k++) {
+                    if (val % k === 0) factors.push(k)
+                }
+                if (factors.length > 0) {
+                    const f = factors[Math.floor(Math.random() * factors.length)]
+                    options.push({ val, label: `${f} × ${val / f}` })
+                } else {
+                    const a = Math.floor(Math.random() * val)
+                    options.push({ val, label: `${a} + ${val - a}` })
+                }
+            }
+        }
+
+    } else { // Hard
+        // Numbers 1-100, All ops
+        target = Math.floor(Math.random() * 80) + 20 // 20 to 100
+        options = []
+        for (let i = 0; i < 6; i++) {
+            const isCorrect = i < 3
+            const val = isCorrect ? target : target + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 10 + 2)
+
+            const type = Math.random()
+            if (type < 0.25) { // Add
+                const a = Math.floor(Math.random() * val)
+                options.push({ val, label: `${a} + ${val - a}` })
+            } else if (type < 0.5) { // Sub
+                const a = val + Math.floor(Math.random() * 30)
+                options.push({ val, label: `${a} - ${a - val}` })
+            } else if (type < 0.75) { // Mul
+                const factors = []
+                for (let k = 2; k <= Math.sqrt(val); k++) {
+                    if (val % k === 0) factors.push(k)
+                }
+                if (factors.length > 0) {
+                    const f = factors[Math.floor(Math.random() * factors.length)]
+                    options.push({ val, label: `${f} × ${val / f}` })
+                } else {
+                    const a = val + Math.floor(Math.random() * 30)
+                    options.push({ val, label: `${a} - ${a - val}` })
+                }
+            } else { // Div
+                const multiplier = Math.floor(Math.random() * 4) + 2
+                options.push({ val, label: `${val * multiplier} : ${multiplier}` })
+            }
+        }
+    }
+
+    // Shuffle options and assign IDs
+    options = options.sort(() => Math.random() - 0.5).map((o, i) => ({ ...o, id: `opt-${index}-${i}` }))
+
+    return {
+        id: index,
+        target,
+        options
+    }
+}
 
 export default function BalanceGame({ config, onFinish, onExit }) {
     const [levelIndex, setLevelIndex] = useState(0)
+    const [level, setLevel] = useState(null)
+
+    // Physics State
     const [leftWeight, setLeftWeight] = useState(0)
     const [rightWeight, setRightWeight] = useState(0)
     const [rightItems, setRightItems] = useState([])
-
     const [draggedItem, setDraggedItem] = useState(null)
     const [tilt, setTilt] = useState(-MAX_TILT)
     const [feedback, setFeedback] = useState(null)
     const [gameOver, setGameOver] = useState(false)
 
-    const level = LEVELS[levelIndex]
-
+    // Setup Level
     useEffect(() => {
-        setLeftWeight(level.target)
+        const newLevel = generateLevel(config.difficulty, levelIndex)
+        setLevel(newLevel)
+        setLeftWeight(newLevel.target)
         setRightWeight(0)
         setRightItems([])
         setTilt(-MAX_TILT)
         setFeedback(null)
-    }, [levelIndex])
+    }, [levelIndex, config.difficulty])
 
+    // Physics Loop
     useEffect(() => {
         const interval = setInterval(() => {
             setTilt(prev => {
@@ -87,7 +158,7 @@ export default function BalanceGame({ config, onFinish, onExit }) {
         if (newRightWeight === leftWeight) {
             setFeedback('success')
             setTimeout(() => {
-                if (levelIndex < LEVELS.length - 1) setLevelIndex(prev => prev + 1)
+                if (levelIndex < 9) setLevelIndex(prev => prev + 1) // Play 10 rounds
                 else setGameOver(true)
             }, 1500)
         } else if (newRightWeight > leftWeight) {
@@ -101,6 +172,8 @@ export default function BalanceGame({ config, onFinish, onExit }) {
         setDraggedItem(null)
     }
 
+    if (!level) return <div>Загрузка...</div>
+
     if (gameOver) {
         return (
             <div style={{ padding: 40, background: 'white', borderRadius: 24, boxShadow: 'var(--cp-shadow-lg)', maxWidth: 400, margin: '80px auto', textAlign: 'center' }} className="animate-fade">
@@ -109,6 +182,7 @@ export default function BalanceGame({ config, onFinish, onExit }) {
                 <button className="btn btn-primary" onClick={() => { setLevelIndex(0); setGameOver(false) }} style={{ marginTop: 24 }}>
                     <RotateCcw size={18} /> Сначала
                 </button>
+                <button className="btn btn-ghost mt-4" onClick={onExit}>Выход</button>
             </div>
         )
     }
@@ -116,7 +190,7 @@ export default function BalanceGame({ config, onFinish, onExit }) {
     return (
         <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <span style={{ color: 'var(--cp-text-secondary)', fontWeight: 'bold' }}>Уровень {levelIndex + 1} / {LEVELS.length}</span>
+                <span style={{ color: 'var(--cp-text-secondary)', fontWeight: 'bold' }}>Уровень {levelIndex + 1} / 10</span>
                 <button className="btn btn-secondary btn-sm" onClick={onExit}><ArrowLeft size={16} /> Выход</button>
             </div>
 

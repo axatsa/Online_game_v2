@@ -60,6 +60,13 @@ let db
       FOREIGN KEY(user_id) REFERENCES users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS students (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      class_id INTEGER,
+      name TEXT,
+      FOREIGN KEY(class_id) REFERENCES classes(id) ON DELETE CASCADE
+    );
+
     CREATE TABLE IF NOT EXISTS saved_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER,
@@ -221,6 +228,56 @@ app.post('/api/generate/crossword', checkDbReady, authenticateToken, async (req,
     }
 })
 
+// Generate Jeopardy (AI)
+app.post('/api/generate/jeopardy', checkDbReady, authenticateToken, async (req, res) => {
+    try {
+        const { topic, difficulty, grade, language } = req.body
+
+        const prompt = `
+            Create a Jeopardy-style quiz game content.
+            Topic: "${topic}"
+            Target Audience: Grade ${grade || 'Any'} students.
+            Difficulty: ${difficulty} (easy/medium/hard).
+            Language: ${language === 'uz' ? 'Uzbek' : 'Russian'}
+            
+            Generate 5 categories.
+            For each category, generate 5 questions with increasing difficulty (100 to 500 points).
+            
+            Output STRICT JSON format:
+            {
+                "categories": [
+                    {
+                        "name": "Category Name",
+                        "questions": [
+                            { "points": 100, "q": "Question text", "a": "Answer text" },
+                            ... (200, 300, 400, 500)
+                        ]
+                    }
+                ]
+            }
+        `
+
+        const completion = await openai.chat.completions.create({
+            messages: [
+                { role: "system", content: "You are a quiz generator. Output strict JSON only." },
+                { role: "user", content: prompt }
+            ],
+            model: "gpt-4o-mini",
+            response_format: { type: "json_object" }
+        });
+
+        const content = JSON.parse(completion.choices[0].message.content)
+
+        // Increment Stats
+        await db.run("UPDATE users SET generated_count = generated_count + 1 WHERE id = ?", req.user.id)
+
+        res.json(content)
+    } catch (error) {
+        console.error("Jeopardy Generation Error:", error)
+        res.status(500).json({ error: 'AI generation failed' })
+    }
+})
+
 // --- Admin Routes ---
 
 // Get All Users (Admin Only)
@@ -313,6 +370,131 @@ app.get('/api/saved/item/:id', checkDbReady, authenticateToken, async (req, res)
         res.json(item)
     } else {
         res.status(404).json({ error: 'Not found' })
+    }
+})
+
+// --- Class Management Routes ---
+
+// Get User's Classes
+app.get('/api/classes', checkDbReady, authenticateToken, async (req, res) => {
+    try {
+        const classes = await db.all("SELECT * FROM classes WHERE user_id = ? ORDER BY id DESC", req.user.id)
+        res.json(classes)
+    } catch (e) {
+        console.error("GET Classes Error:", e)
+        res.status(500).json({ error: 'Failed to fetch classes' })
+    }
+})
+
+// Update a class
+app.put('/api/classes/:id', checkDbReady, authenticateToken, async (req, res) => {
+    try {
+        const { grade, topic, interests, language } = req.body
+        const { id } = req.params
+
+        // Verify ownership
+        const cls = await db.get("SELECT * FROM classes WHERE id = ? AND user_id = ?", id, req.user.id)
+        if (!cls) return res.status(404).json({ error: "Class not found" })
+
+        await db.run(
+            `UPDATE classes SET grade = COALESCE(?, grade), topic = COALESCE(?, topic), 
+             interests = COALESCE(?, interests), language = COALESCE(?, language) 
+             WHERE id = ?`,
+            grade, topic, interests, language, id
+        )
+
+        res.json({ success: true })
+    } catch (e) {
+        console.error(e)
+        res.status(500).json({ error: "Failed to update class" })
+    }
+})
+
+// Create Class
+app.post('/api/classes', checkDbReady, authenticateToken, async (req, res) => {
+    const { grade, topic, interests, language } = req.body
+
+    try {
+        const result = await db.run(
+            "INSERT INTO classes (user_id, grade, topic, interests, language) VALUES (?, ?, ?, ?, ?)",
+            req.user.id, grade, topic || '', interests || '', language || 'ru'
+        )
+        res.json({ success: true, id: result.lastID })
+    } catch (e) {
+        console.error("CREATE Class Error:", e)
+        res.status(500).json({ error: 'Failed to create class' })
+    }
+})
+
+// Delete Class
+app.delete('/api/classes/:id', checkDbReady, authenticateToken, async (req, res) => {
+    const { id } = req.params
+
+    try {
+        await db.run("DELETE FROM classes WHERE id = ? AND user_id = ?", id, req.user.id)
+        res.json({ success: true })
+    } catch (e) {
+        console.error("DELETE Class Error:", e)
+        res.status(500).json({ error: 'Failed to delete class' })
+    }
+})
+
+// --- Students API ---
+
+// Get Students for a class
+app.get('/api/classes/:classId/students', checkDbReady, authenticateToken, async (req, res) => {
+    try {
+        const { classId } = req.params
+        // Verify class ownership
+        const cls = await db.get("SELECT * FROM classes WHERE id = ? AND user_id = ?", classId, req.user.id)
+        if (!cls) return res.status(403).json({ error: 'Access denied' })
+
+        const students = await db.all("SELECT * FROM students WHERE class_id = ?", classId)
+        res.json(students)
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to fetch students' })
+    }
+})
+
+// Add Student(s)
+app.post('/api/classes/:classId/students', checkDbReady, authenticateToken, async (req, res) => {
+    try {
+        const { classId } = req.params
+        const { name, names } = req.body // Support single 'name' or array 'names'
+
+        const cls = await db.get("SELECT * FROM classes WHERE id = ? AND user_id = ?", classId, req.user.id)
+        if (!cls) return res.status(403).json({ error: 'Access denied' })
+
+        if (names && Array.isArray(names)) {
+            for (const n of names) {
+                if (n.trim()) await db.run("INSERT INTO students (class_id, name) VALUES (?, ?)", classId, n.trim())
+            }
+        } else if (name) {
+            await db.run("INSERT INTO students (class_id, name) VALUES (?, ?)", classId, name.trim())
+        }
+
+        const students = await db.all("SELECT * FROM students WHERE class_id = ?", classId)
+        res.json(students)
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to add student' })
+    }
+})
+
+// Delete Student
+app.delete('/api/students/:id', checkDbReady, authenticateToken, async (req, res) => {
+    try {
+        // We should verify ownership via class linkage, but for speed logic:
+        // Get student -> check class -> check user
+        const student = await db.get("SELECT s.id, c.user_id FROM students s JOIN classes c ON s.class_id = c.id WHERE s.id = ?", req.params.id)
+
+        if (!student || student.user_id !== req.user.id) {
+            return res.status(403).json({ error: 'Access denied' })
+        }
+
+        await db.run("DELETE FROM students WHERE id = ?", req.params.id)
+        res.json({ success: true })
+    } catch (e) {
+        res.status(500).json({ error: 'Failed to delete student' })
     }
 })
 

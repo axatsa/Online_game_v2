@@ -5,74 +5,103 @@ import { Clock, Check, X, ArrowLeft } from 'lucide-react'
 /* =========================================
    HELPER: Generate Math/Logic/Science Question
    ========================================= */
-function generateQuestion(topic, ops, difficulty = 'medium') {
-    const max = difficulty === 'easy' ? 10 : difficulty === 'medium' ? 50 : 100
+/* =========================================
+   HELPER: Generate Question based on Grade (1-6)
+   ========================================= */
+function generateQuestion(grade) {
+    const id = Math.random()
 
-    // Logic Questions (Sequences)
-    if (topic === 'logic') {
-        const type = Math.random() > 0.5 ? 'seq' : 'pattern'
-        if (type === 'seq') {
-            const start = Math.floor(Math.random() * max / 2) + 1
-            const step = Math.floor(Math.random() * 5) + 1
-            return { text: `${start}, ${start + step}, ${start + step * 2}, ?`, correct: start + step * 3, id: Math.random() }
+    // Grade 1: Simple Addition/Subtraction (0-20)
+    if (grade === 1) {
+        const op = Math.random() > 0.5 ? '+' : '-'
+        if (op === '+') {
+            const a = Math.floor(Math.random() * 10) + 1
+            const b = Math.floor(Math.random() * 10) + 1
+            return { text: `${a} + ${b} = ?`, correct: a + b, id }
         } else {
-            const a = Math.floor(Math.random() * (max / 5)) + 1
-            return { text: `${a} -> ${a * 2}, ${a + 1} -> ?`, correct: (a + 1) * 2, id: Math.random() }
+            const a = Math.floor(Math.random() * 10) + 5
+            const b = Math.floor(Math.random() * 5) + 1
+            return { text: `${a} - ${b} = ?`, correct: a - b, id }
         }
     }
 
-    // Science Questions (Facts with numeric answers) - Static for now, could be expanded
-    if (topic === 'science') {
+    // Grade 2: Add/Sub (0-100)
+    if (grade === 2) {
+        const op = Math.random() > 0.5 ? '+' : '-'
+        const a = Math.floor(Math.random() * 40) + 10
+        const b = Math.floor(Math.random() * 40) + 10
+        if (op === '+') return { text: `${a} + ${b} = ?`, correct: a + b, id }
+        // Ensure positive
+        const big = Math.max(a, b), small = Math.min(a, b)
+        return { text: `${big} - ${small} = ?`, correct: big - small, id }
+    }
+
+    // Grade 3: + Multiplication Table (1-10)
+    if (grade === 3) {
+        const type = Math.random()
+        if (type < 0.4) { // Add/Sub
+            const a = Math.floor(Math.random() * 80) + 10
+            const b = Math.floor(Math.random() * 80) + 10
+            return { text: `${a} + ${b} = ?`, correct: a + b, id }
+        } else { // Mul
+            const a = Math.floor(Math.random() * 9) + 2
+            const b = Math.floor(Math.random() * 9) + 2
+            return { text: `${a} × ${b} = ?`, correct: a * b, id }
+        }
+    }
+
+    // Grade 4: + Division & logic
+    if (grade === 4) {
+        const type = Math.random()
+        if (type < 0.3) { // Mul
+            const a = Math.floor(Math.random() * 12) + 2
+            const b = Math.floor(Math.random() * 12) + 2
+            return { text: `${a} × ${b} = ?`, correct: a * b, id }
+        } else if (type < 0.6) { // Div
+            const b = Math.floor(Math.random() * 9) + 2
+            const ans = Math.floor(Math.random() * 9) + 2
+            return { text: `${b * ans} : ${b} = ?`, correct: ans, id }
+        } else { // Logic
+            const start = Math.floor(Math.random() * 20) + 1
+            const step = Math.floor(Math.random() * 5) + 2
+            return { text: `${start}, ${start + step}, ${start + step * 2}, ?`, correct: start + step * 3, id }
+        }
+    }
+
+    // Grade 5-6: Harder Math + Science/General
+    const subject = Math.random()
+    if (subject < 0.7) { // Math
+        const type = Math.random()
+        if (type < 0.3) {
+            const a = Math.floor(Math.random() * 20) + 10
+            const b = Math.floor(Math.random() * 9) + 2
+            return { text: `${a} × ${b} = ?`, correct: a * b, id }
+        } else if (type < 0.6) {
+            // Order of ops: 2 + 2 * 2
+            const a = Math.floor(Math.random() * 5) + 2
+            const b = Math.floor(Math.random() * 5) + 2
+            const c = Math.floor(Math.random() * 5) + 2
+            return { text: `${a} + ${b} × ${c} = ?`, correct: a + b * c, id }
+        } else {
+            // Square
+            const a = Math.floor(Math.random() * 10) + 1
+            return { text: `${a}² = ?`, correct: a * a, id }
+        }
+    } else { // General Knowledge
         const facts = [
-            { q: 'Ног у паука?', a: 8 },
-            { q: 'Ног у насекомого?', a: 6 },
-            { q: 'Планет в системе?', a: 8 },
-            { q: 'Кипение воды (°C)?', a: 100 },
-            { q: 'Зубов у человека?', a: 32 },
-            { q: 'Пальцев на руке?', a: 5 },
-            { q: 'Цветов радуги?', a: 7 },
-            { q: 'Колес у машины?', a: 4 },
-            { q: 'Литри в 1 кг воды?', a: 1 },
-            { q: 'Глаз у циклопа?', a: 1 }
+            { q: '50% от 100?', a: 50 },
+            { q: 'Углов у квадрата?', a: 4 },
+            { q: 'Углов у треугольника?', a: 3 },
+            { q: '1 час = ? мин', a: 60 },
+            { q: '1 кг = ? гр', a: 1000 },
+            { q: 'В сутках часов?', a: 24 },
+            { q: 'Дней в году (обычном)?', a: 365 },
+            { q: 'Какой месяц 1-й?', a: 1 },
+            { q: 'Сколько материков?', a: 6 }
         ]
         const f = facts[Math.floor(Math.random() * facts.length)]
-        return { text: f.q, correct: f.a, id: Math.random() }
+        return { text: f.q, correct: f.a, id }
     }
-
-    // Math (Default)
-    const op = (ops && ops.length > 0) ? ops[Math.floor(Math.random() * ops.length)] : 'add'
-    let a, b, ans, sign
-
-    switch (op) {
-        case 'add':
-            a = Math.floor(Math.random() * max) + 1
-            b = Math.floor(Math.random() * max) + 1
-            ans = a + b
-            sign = '+'
-            break
-        case 'sub':
-            a = Math.floor(Math.random() * max) + 5
-            b = Math.floor(Math.random() * a) + 1 // Ensure positive result
-            ans = a - b
-            sign = '-'
-            break
-        case 'mul':
-            const mMax = difficulty === 'easy' ? 5 : difficulty === 'medium' ? 10 : 12
-            a = Math.floor(Math.random() * mMax) + 1
-            b = Math.floor(Math.random() * mMax) + 1
-            ans = a * b
-            sign = '×'
-            break
-        case 'div':
-            b = Math.floor(Math.random() * (difficulty === 'easy' ? 5 : 9)) + 2
-            ans = Math.floor(Math.random() * (difficulty === 'easy' ? 5 : 10)) + 1
-            a = b * ans
-            sign = '÷'
-            break
-        default:
-            a = 1; b = 1; ans = 2; sign = '+'
-    }
-    return { text: `${a} ${sign} ${b} = ?`, correct: ans, id: Math.random() }
 }
 
 /* =========================================
@@ -156,12 +185,17 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
 
     // Init Questions
     useEffect(() => {
-        const ops = config.mathOps || ['add']
-        const topic = config.topic || 'math'
-        const diff = config.difficulty || 'medium'
-        setP1Q(generateQuestion(topic, ops, diff))
-        setP2Q(generateQuestion(topic, ops, diff))
+        const grade = config.grade || 1 // Default to Grade 1
+        setP1Q(generateQuestion(grade))
+        setP2Q(generateQuestion(grade))
     }, [config])
+
+    // Generate new question on correct answer
+    const nextQuestion = (isP1) => {
+        const grade = config.grade || 1
+        if (isP1) setP1Q(generateQuestion(grade))
+        else setP2Q(generateQuestion(grade))
+    }
 
     // Timer
     useEffect(() => {
@@ -217,21 +251,17 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
 
         if (val === q.correct) {
             // Correct!
-            const topic = config.topic || 'math'
-            const ops = config.mathOps || ['add']
-            const diff = config.difficulty || 'medium'
-
             if (isP1) {
                 setP1Score(s => s + 1)
                 setRopePos(p => Math.max(p - 10, -100)) // Blue pulls Left (negative)
                 setAnimState('pull-blue')
-                setP1Q(generateQuestion(topic, ops, diff))
+                nextQuestion(true)
                 setP1Input('')
             } else {
                 setP2Score(s => s + 1)
                 setRopePos(p => Math.min(p + 10, 100)) // Red pulls Right (positive)
                 setAnimState('pull-red')
-                setP2Q(generateQuestion(topic, ops, diff))
+                nextQuestion(false)
                 setP2Input('')
             }
 

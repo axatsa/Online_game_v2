@@ -7,13 +7,14 @@ import { useClassContext } from '../contexts/ClassContext'
 import BrainTugGame from '../games/BrainTug/BrainTugGame'
 import MemoryMatrixGame from '../games/MemoryMatrix/MemoryMatrixGame'
 import JeopardyGame from '../games/Jeopardy/JeopardyGame'
+import JeopardySetup from '../games/Jeopardy/JeopardySetup'
 import BalanceGame from '../games/Balance/BalanceGame'
 import WordSearchGame from '../games/WordSearch/WordSearchGame'
 
 const GAMES_META = {
     'brain-tug': { title: 'Битва знаний', component: BrainTugGame },
     'memory-matrix': { title: 'Memory Matrix', component: MemoryMatrixGame },
-    'jeopardy': { title: 'Своя Игра', component: JeopardyGame },
+    'jeopardy': { title: 'Своя Игра', component: JeopardyGame, setup: JeopardySetup },
     'balance': { title: 'Весы', component: BalanceGame },
     'word-search': { title: 'Филворд', component: WordSearchGame },
 }
@@ -25,17 +26,26 @@ export default function GamePage() {
 
     const [gameState, setGameState] = useState('setup') // setup, playing
     const [config, setConfig] = useState({
+        // Common
+        difficulty: 'medium',
+        topic: classCtx.topic || 'Общий',
+
+        // Brain Tug
         team1: 'Команда 1',
         team2: 'Команда 2',
-        team3: '', // Optional
-        team4: '', // Optional
-        topic: classCtx.topic || 'Общий',
-        difficulty: 'medium',
-        // Memory Matrix specific
-        gridSize: 4,
-        totalPairs: 8,
-        cols: 4,
-        cards: ['🍎', '🍌', '🍇', '🍓', '🍒', '🥝', '🍍', '🥭', '🍎', '🍌', '🍇', '🍓', '🍒', '🥝', '🍍', '🥭']
+        grade: classCtx.grade || 1,
+
+        // Jeopardy
+        team3: '',
+        team4: '',
+        teams: ['Команда 1', 'Команда 2'],
+
+        // Memory Matrix
+        theme: 'fruit',
+        gridSize: 4, // calculated from difficulty
+
+        // Word Search
+        // ... (uses topic/difficulty)
     })
 
     const game = GAMES_META[gameId]
@@ -50,81 +60,165 @@ export default function GamePage() {
     }
 
     const GameComponent = game.component
+    const SetupComponent = game.setup
 
     if (gameState === 'setup') {
+        // Use custom setup if available (e.g. Jeopardy)
+        if (SetupComponent) {
+            return (
+                <div className="page animate-fade">
+                    <button className="btn btn-ghost btn-sm" onClick={() => navigate('/games')} style={{ marginBottom: 24 }}>
+                        <ArrowLeft size={16} /> Назад
+                    </button>
+                    <SetupComponent
+                        config={config}
+                        setConfig={setConfig}
+                        onStart={() => setGameState('playing')}
+                    />
+                </div>
+            )
+        }
+
+        // Generic / Specific Setup for other games
         return (
             <div className="page animate-fade" style={{ maxWidth: 800 }}>
                 <button className="btn btn-ghost btn-sm" onClick={() => navigate('/games')} style={{ marginBottom: 24 }}>
                     <ArrowLeft size={16} /> Назад
                 </button>
 
-                <div className="card">
-                    <h1 className="text-center" style={{ marginBottom: 32 }}>{game.title}</h1>
+                <div className="card shadow-xl p-8 bg-white rounded-3xl border border-slate-100">
+                    <h1 className="text-3xl font-extrabold text-center mb-8 text-slate-800">{game.title}</h1>
 
-                    {gameId === 'brain-tug' ? (
-                        <div className="flex gap-md" style={{ marginBottom: 32 }}>
-                            <div style={{ flex: 1, padding: 20, background: '#EFF6FF', borderRadius: 12, border: '2px solid #3B82F6' }}>
-                                <h3 className="text-center" style={{ color: '#1D4ED8', marginBottom: 16 }}>Синяя команда</h3>
-                                <div className="form-group">
-                                    <input className="input" value={config.team1} onChange={e => setConfig({ ...config, team1: e.target.value })} style={{ textAlign: 'center' }} />
+                    {gameId === 'brain-tug' && (
+                        <>
+                            <div className="flex gap-4 mb-6">
+                                <div className="flex-1 p-4 bg-blue-50 rounded-xl border-2 border-blue-100">
+                                    <label className="label font-bold text-blue-800">Синяя команда</label>
+                                    <input className="input input-bordered w-full" value={config.team1} onChange={e => setConfig({ ...config, team1: e.target.value })} />
+                                </div>
+                                <div className="flex-1 p-4 bg-red-50 rounded-xl border-2 border-red-100">
+                                    <label className="label font-bold text-red-800">Красная команда</label>
+                                    <input className="input input-bordered w-full" value={config.team2} onChange={e => setConfig({ ...config, team2: e.target.value })} />
                                 </div>
                             </div>
-                            <div style={{ flex: 1, padding: 20, background: '#FEF2F2', borderRadius: 12, border: '2px solid #EF4444' }}>
-                                <h3 className="text-center" style={{ color: '#B91C1C', marginBottom: 16 }}>Красная команда</h3>
-                                <div className="form-group">
-                                    <input className="input" value={config.team2} onChange={e => setConfig({ ...config, team2: e.target.value })} style={{ textAlign: 'center' }} />
+
+                            <div className="form-control mb-6">
+                                <label className="label font-bold">Уровень класса (Сложность)</label>
+                                <input
+                                    type="range" min="1" max="6" step="1"
+                                    value={config.grade}
+                                    onChange={(e) => setConfig({ ...config, grade: parseInt(e.target.value) })}
+                                    className="range range-primary"
+                                />
+                                <div className="w-full flex justify-between text-xs px-2 mt-2 font-bold text-slate-500">
+                                    <span>1 класс</span>
+                                    <span>2 класс</span>
+                                    <span>3 класс</span>
+                                    <span>4 класс</span>
+                                    <span>5 класс</span>
+                                    <span>6 класс</span>
                                 </div>
                             </div>
-                        </div>
-                    ) : gameId === 'jeopardy' ? (
-                        <div className="flex flex-col gap-m mb-xl">
-                            <div className="grid grid-cols-2 gap-m">
-                                <div className="form-group">
-                                    <label className="form-label">Команда 1</label>
-                                    <input className="input" value={config.team1} onChange={e => setConfig({ ...config, team1: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Команда 2</label>
-                                    <input className="input" value={config.team2} onChange={e => setConfig({ ...config, team2: e.target.value })} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Команда 3 (опционально)</label>
-                                    <input className="input" value={config.team3} onChange={e => setConfig({ ...config, team3: e.target.value })} placeholder="Не играет" />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Команда 4 (опционально)</label>
-                                    <input className="input" value={config.team4} onChange={e => setConfig({ ...config, team4: e.target.value })} placeholder="Не играет" />
+                        </>
+                    )}
+
+                    {gameId === 'memory-matrix' && (
+                        <>
+                            <div className="form-control mb-6">
+                                <label className="label font-bold">Тема карточек</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    {['fruit', 'animal', 'emoji', 'sport'].map(t => (
+                                        <button
+                                            key={t}
+                                            className={`btn ${config.theme === t ? 'btn-primary' : 'btn-outline'}`}
+                                            onClick={() => setConfig({ ...config, theme: t })}
+                                        >
+                                            {t === 'fruit' ? '🍎 Фрукты' : t === 'animal' ? '🐶 Животные' : t === 'emoji' ? '😎 Эмодзи' : '⚽ Спорт'}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
-                            <div className="form-group mt-m">
-                                <label className="form-label">Тема викторины</label>
-                                <input className="input" value={config.topic} onChange={e => setConfig({ ...config, topic: e.target.value })} />
-                                <p className="text-xs text-secondary mt-1">Пока используется демо-набор "Узбекистан"</p>
+
+                            <div className="form-control mb-6">
+                                <label className="label font-bold">Сложность (Размер поля)</label>
+                                <select className="select select-bordered w-full" value={config.difficulty} onChange={e => setConfig({ ...config, difficulty: e.target.value })}>
+                                    <option value="easy">Легко (3x4)</option>
+                                    <option value="medium">Средне (4x4)</option>
+                                    <option value="hard">Сложно (5x4)</option>
+                                    <option value="expert">Эксперт (6x5)</option>
+                                </select>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col gap-m mb-xl">
-                            <div className="form-group">
-                                <label className="form-label">Тема игры</label>
-                                <input className="input" value={config.topic} onChange={e => setConfig({ ...config, topic: e.target.value })} />
+                        </>
+                    )}
+
+                    {gameId === 'balance' && (
+                        <div className="form-control mb-6">
+                            <label className="label font-bold">Сложность примеров</label>
+                            <div className="w-full flex justify-between px-1 mb-2">
+                                <span className={config.difficulty === 'easy' ? 'text-primary font-bold' : ''}>Легко</span>
+                                <span className={config.difficulty === 'medium' ? 'text-primary font-bold' : ''}>Средне</span>
+                                <span className={config.difficulty === 'hard' ? 'text-primary font-bold' : ''}>Сложно</span>
                             </div>
+                            <input
+                                type="range" min="0" max="2"
+                                value={config.difficulty === 'easy' ? 0 : config.difficulty === 'medium' ? 1 : 2}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value)
+                                    setConfig({ ...config, difficulty: val === 0 ? 'easy' : val === 1 ? 'medium' : 'hard' })
+                                }}
+                                className="range range-primary"
+                            />
                         </div>
                     )}
 
-                    <div className="flex gap-md mb-xl">
-                        <div style={{ flex: 1 }}>
-                            <label className="form-label">Сложность</label>
-                            <select className="select" value={config.difficulty} onChange={e => setConfig({ ...config, difficulty: e.target.value })}>
-                                <option value="easy">Легко</option>
-                                <option value="medium">Средне</option>
-                                <option value="hard">Сложно</option>
-                            </select>
-                        </div>
-                    </div>
+                    {gameId === 'word-search' && (
+                        <>
+                            <div className="form-control mb-6">
+                                <label className="label font-bold">Тема слов</label>
+                                <select className="select select-bordered" value={config.topic} onChange={e => setConfig({ ...config, topic: e.target.value })}>
+                                    <option value="География">География</option>
+                                    <option value="Школа">Школа</option>
+                                    <option value="Животные">Животные</option>
+                                    <option value="Еда">Еда</option>
+                                    <option value="Космос">Космос</option>
+                                </select>
+                            </div>
+                            <div className="form-control mb-6">
+                                <label className="label font-bold">Сложность</label>
+                                <div className="join w-full">
+                                    {['easy', 'medium', 'hard'].map(d => (
+                                        <button
+                                            key={d}
+                                            className={`join-item btn flex-1 ${config.difficulty === d ? 'btn-primary' : ''}`}
+                                            onClick={() => setConfig({ ...config, difficulty: d })}
+                                        >
+                                            {d === 'easy' ? 'Легко' : d === 'medium' ? 'Средне' : 'Сложно'}
+                                        </button>
+                                    ))}
+                                </div>
+                                <label className="label">
+                                    <span className="label-text-alt text-gray-500">
+                                        {config.difficulty === 'easy' ? 'Только по горизонтали' :
+                                            config.difficulty === 'medium' ? 'Горизонтально и вертикально' :
+                                                'Во все стороны + диагонали'}
+                                    </span>
+                                </label>
+                            </div>
+                        </>
+                    )}
 
-                    <button className="btn btn-primary btn-lg btn-full" onClick={() => setGameState('playing')}>
+                    <button className="btn btn-primary btn-lg w-full shadow-lg shadow-blue-500/30 mt-4" onClick={() => setGameState('playing')}>
                         Начать игру
                     </button>
+
+                    {/* Common Footer */}
+                    <div className="mt-4 text-center">
+                        <div className="tooltip" data-tip="Правила игры будут здесь">
+                            <button className="btn btn-sm btn-ghost gap-2 text-gray-400">
+                                <span className="font-serif">i</span> Как играть?
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         )

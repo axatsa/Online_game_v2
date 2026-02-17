@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, X, Eye, Plus, Minus, Trophy } from 'lucide-react'
+import { ArrowLeft, X, Eye, Plus, Minus, Trophy, Loader2 } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
+import { useClassContext } from '../../contexts/ClassContext'
 
-// Mock Data
-const MOCK_DATA = {
+// Fallback Data
+const FALLBACK_DATA = {
     categories: [
         {
             name: 'История',
@@ -14,48 +16,81 @@ const MOCK_DATA = {
                 { points: 500, q: 'Автор "Бабур-наме"', a: 'Захириддин Мухаммад Бабур' }
             ]
         },
-        {
-            name: 'География',
-            questions: [
-                { points: 100, q: 'Самая длинная река в Средней Азии', a: 'Сырдарья' },
-                { points: 200, q: 'Столица Узбекистана', a: 'Ташкент' },
-                { points: 300, q: 'Море, которое почти исчезло', a: 'Аральское море' },
-                { points: 400, q: 'Пустыня, занимающая большую часть страны', a: 'Кызылкум' },
-                { points: 500, q: 'Город-музей под открытым небом', a: 'Хива' }
-            ]
-        },
-        {
-            name: 'Литература',
-            questions: [
-                { points: 100, q: 'Кто написал "Хамса"?', a: 'Алишер Навои' },
-                { points: 200, q: 'Известный узбекский поэт и писатель 20 века', a: 'Абдулла Кадыри' },
-                { points: 300, q: 'Автор гимна Узбекистана', a: 'Абдулла Арипов' },
-                { points: 400, q: 'Произведение "Минувшие дни"', a: 'Абдулла Кадыри' },
-                { points: 500, q: 'Знаменитый сатирик и поэт', a: 'Гайрати' }
-            ]
-        },
-        {
-            name: 'Природа',
-            questions: [
-                { points: 100, q: 'Национальный фрукт (символ плодородия)', a: 'Гранат' },
-                { points: 200, q: 'Белое золото Узбекистана', a: 'Хлопок' },
-                { points: 300, q: 'Горная цепь на востоке страны', a: 'Тянь-Шань' },
-                { points: 400, q: 'Редкая антилопа, обитающая в степях', a: 'Сайгак' },
-                { points: 500, q: 'Заповедник в Ташкентской области', a: 'Чаткальский' }
-            ]
-        }
+        // ... (truncated fallback for brevity if fetch fails)
     ]
 }
 
 export default function JeopardyGame({ config, onFinish, onExit }) {
-    const teamsList = [config.team1, config.team2, config.team3, config.team4].filter(Boolean)
+    const { token } = useAuth()
+    const { classCtx } = useClassContext()
 
-    const [teams, setTeams] = useState(teamsList.map(name => ({ name, score: 0 })))
-    const [gameData] = useState(MOCK_DATA)
+    // Support both old and new config format for teams
+    const initialTeams = config.teams
+        ? config.teams
+        : [config.team1, config.team2, config.team3, config.team4].filter(Boolean)
+
+    const [teams, setTeams] = useState(initialTeams.map(name => ({ name, score: 0 })))
+    const [gameData, setGameData] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
     const [answered, setAnswered] = useState(new Set())
     const [activeQuestion, setActiveQuestion] = useState(null)
     const [showAnswer, setShowAnswer] = useState(false)
     const [gameOver, setGameOver] = useState(false)
+
+    // Fetch Game Data
+    useEffect(() => {
+        const fetchGame = async () => {
+            setLoading(true)
+            try {
+                // If specific topic is "Общий" (Default) and we have class context, use it.
+                // Otherwise use the topic provided.
+
+                // But actually, we want to generate new questions every time based on the config.
+                // If it's a "Demo" topic, maybe just use fallback? 
+                // Let's try to generate always if token is present.
+
+                if (!token) {
+                    setGameData(FALLBACK_DATA)
+                    setLoading(false)
+                    return
+                }
+
+                const res = await fetch('/api/generate/jeopardy', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        topic: config.topic,
+                        difficulty: config.difficulty,
+                        grade: classCtx.grade,
+                        language: classCtx.language || 'ru'
+                    })
+                })
+
+                if (!res.ok) throw new Error('Generation failed')
+                const data = await res.json()
+
+                if (data.categories && data.categories.length > 0) {
+                    setGameData(data)
+                } else {
+                    setGameData(FALLBACK_DATA)
+                }
+            } catch (err) {
+                console.error(err)
+                setError('Не удалось создать игру. Используем демо-версию.')
+                setGameData(FALLBACK_DATA)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchGame()
+    }, [config.topic, config.difficulty, classCtx, token])
+
 
     const handleQuestionClick = (catIndex, qIndex, question) => {
         if (answered.has(`${catIndex}-${qIndex}`)) return
@@ -74,16 +109,27 @@ export default function JeopardyGame({ config, onFinish, onExit }) {
         }
     }
 
-    const allAnswered = gameData.categories.every((cat, ci) =>
-        cat.questions.every((_, qi) => answered.has(`${ci}-${qi}`))
-    )
-
     useEffect(() => {
-        if (allAnswered && !activeQuestion) {
-            setGameOver(true)
+        if (gameData && gameData.categories) {
+            const totalQuestions = gameData.categories.reduce((acc, cat) => acc + cat.questions.length, 0)
+            if (answered.size === totalQuestions && totalQuestions > 0 && !activeQuestion) {
+                setGameOver(true)
+            }
         }
-    }, [allAnswered, activeQuestion])
+    }, [answered, activeQuestion, gameData])
 
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-primary">
+                <Loader2 size={48} className="animate-spin mb-4" />
+                <h2 className="text-xl font-bold">Ослик Иа составляет вопросы...</h2>
+                <p className="text-gray-500">Это займет пару секунд</p>
+            </div>
+        )
+    }
+
+    if (!gameData) return null
 
     // --- GAME OVER VIEW ---
     if (gameOver) {
@@ -233,7 +279,7 @@ export default function JeopardyGame({ config, onFinish, onExit }) {
                 marginBottom: '20px', background: 'white', padding: '16px 24px', borderRadius: '16px',
                 boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)'
             }}>
-                <div style={{ display: 'flex', gap: '32px' }}>
+                <div style={{ display: 'flex', gap: '32px', overflowX: 'auto', paddingBottom: 4 }}>
                     {teams.map((t, i) => (
                         <div key={i} style={{ display: 'flex', flexDirection: 'column', minWidth: '80px' }}>
                             <span style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748b' }}>
@@ -245,13 +291,26 @@ export default function JeopardyGame({ config, onFinish, onExit }) {
                         </div>
                     ))}
                 </div>
-                <button style={{
-                    display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
-                    background: '#f1f5f9', border: 'none', borderRadius: '10px', color: '#475569', fontWeight: '600', cursor: 'pointer'
-                }} onClick={onExit}>
-                    <ArrowLeft size={18} /> Выход
-                </button>
+                <div className="flex gap-2">
+                    <div className="badge badge-lg badge-neutral gap-2">
+                        {gameData.categories[0].name === 'История' ? 'DEMO' : config.topic || 'AI'}
+                        <span className="opacity-50 text-xs uppercase">{config.difficulty}</span>
+                    </div>
+                    <button style={{
+                        display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+                        background: '#f1f5f9', border: 'none', borderRadius: '10px', color: '#475569', fontWeight: '600', cursor: 'pointer'
+                    }} onClick={onExit}>
+                        <ArrowLeft size={18} /> Выход
+                    </button>
+                </div>
             </div>
+
+            {error && (
+                <div className="alert alert-warning mb-4 shadow-sm">
+                    <Info size={20} />
+                    <span>{error}</span>
+                </div>
+            )}
 
             {/* Game Grid */}
             <div style={{

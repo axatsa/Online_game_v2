@@ -1,12 +1,40 @@
 import { useState, useEffect, useRef } from 'react'
 import { Pause, Play, RotateCcw, Clock, Trophy, ArrowLeft } from 'lucide-react'
 
+const THEMES = {
+    'fruit': ['🍎', '🍌', '🍇', '🍓', '🍒', '🥝', '🍍', '🥭', '🍐', '🍉', '🍊', '🍋', '🫐', '🍑', '🥥'],
+    'animal': ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'],
+    'emoji': ['😀', '😎', '😍', '🤩', '🤯', '🥳', '🥶', '😡', '😱', '🤖', '💩', '👻', '👽', '💀', '🤡'],
+    'sport': ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🏉', '🎱', '🏓', '🏸', '🥅', '🥊', '🥋', '🎽', '🛹']
+}
+
 export default function MemoryMatrixGame({ config, onFinish, onExit }) {
+    // Determine Grid settings based on difficulty
+    const getGridSettings = (diff) => {
+        switch (diff) {
+            case 'easy': return { cols: 4, rows: 3 } // 12 cards (6 pairs)
+            case 'medium': return { cols: 4, rows: 4 } // 16 cards (8 pairs)
+            case 'hard': return { cols: 5, rows: 4 } // 20 cards (10 pairs)
+            case 'expert': return { cols: 6, rows: 5 } // 30 cards (15 pairs) - tough!
+            default: return { cols: 4, rows: 4 }
+        }
+    }
+
+    const [settings] = useState(() => getGridSettings(config.difficulty || 'medium'))
+
     const [cards, setCards] = useState(() => {
-        const activeCards = config.cards.slice(0, config.totalPairs)
-        const deck = [...activeCards, ...activeCards]
+        const theme = config.theme || 'fruit'
+        const pool = THEMES[theme] || THEMES['fruit']
+        const totalCards = settings.cols * settings.rows
+        const totalPairs = totalCards / 2
+
+        // Pick random symbols for pairs
+        const selectedSymbols = [...pool].sort(() => 0.5 - Math.random()).slice(0, totalPairs)
+
+        const deck = [...selectedSymbols, ...selectedSymbols]
             .map((symbol, i) => ({ id: i, symbol, flipped: false, matched: false }))
             .sort(() => Math.random() - 0.5)
+
         return deck
     })
 
@@ -26,11 +54,12 @@ export default function MemoryMatrixGame({ config, onFinish, onExit }) {
     }, [paused, gameOver])
 
     useEffect(() => {
-        if (matchedPairs === config.totalPairs) {
+        const totalPairs = (settings.cols * settings.rows) / 2
+        if (matchedPairs === totalPairs) {
             setGameOver(true)
             clearInterval(timerRef.current)
         }
-    }, [matchedPairs, config.totalPairs])
+    }, [matchedPairs, settings])
 
     const handleCardClick = (id) => {
         if (paused || gameOver) return
@@ -65,6 +94,15 @@ export default function MemoryMatrixGame({ config, onFinish, onExit }) {
 
     const formatTime = (s) => `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`
 
+    // Helper to calculate card size based on grid
+    const getCardSize = () => {
+        // We want the grid to fit in roughly 600px width / 600px height max
+        // Default base size ~80px, but scale down for larger grids
+        if (settings.cols >= 6) return '60px'
+        if (settings.cols >= 5) return '70px'
+        return '90px'
+    }
+
     if (gameOver) {
         return (
             <div style={{ padding: 40, background: 'white', borderRadius: 24, boxShadow: 'var(--cp-shadow-lg)', maxWidth: 400, margin: '80px auto', textAlign: 'center' }} className="animate-fade">
@@ -82,14 +120,14 @@ export default function MemoryMatrixGame({ config, onFinish, onExit }) {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center' }}>
             {/* Top Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 32 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24, width: '100%', maxWidth: 800 }}>
                 <div style={{ display: 'flex', gap: 16 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', padding: '8px 16px', borderRadius: 12, border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '18px', fontWeight: 'bold', color: '#475569' }}>
                         <Clock size={20} className="text-secondary" /> {formatTime(elapsedTime)}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', padding: '8px 16px', borderRadius: 8, border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '18px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'white', padding: '8px 16px', borderRadius: 12, border: '1px solid #e2e8f0', fontFamily: 'monospace', fontSize: '18px', fontWeight: 'bold', color: '#475569' }}>
                         <RotateCcw size={20} className="text-secondary" /> {moves}
                     </div>
                 </div>
@@ -100,33 +138,41 @@ export default function MemoryMatrixGame({ config, onFinish, onExit }) {
             </div>
 
             {/* Grid */}
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${config.cols}, 1fr)`, gap: 16, width: '100%', maxWidth: 500 }}>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', width: '100%' }}>
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${settings.cols}, 1fr)`,
+                    gap: 12,
+                    userSelect: 'none',
+                    padding: 20
+                }}>
                     {cards.map(card => (
                         <div key={card.id} onClick={() => handleCardClick(card.id)}
                             style={{
-                                aspectRatio: '3/4', perspective: '1000px', cursor: 'pointer',
+                                width: getCardSize(), height: getCardSize(),
+                                perspective: '1000px', cursor: 'pointer',
                                 opacity: card.matched ? 0 : 1, pointerEvents: card.matched ? 'none' : 'auto',
                                 transition: 'opacity 0.5s'
                             }}
                         >
                             <div style={{
                                 position: 'relative', width: '100%', height: '100%',
-                                transformStyle: 'preserve-3d', transition: 'transform 0.6s',
+                                transformStyle: 'preserve-3d', transition: 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                                 transform: card.flipped ? 'rotateY(180deg)' : 'rotateY(0)'
                             }}>
                                 {/* Front (Back of card) */}
                                 <div style={{
                                     position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
-                                    background: '#4f46e5', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #818cf8', color: 'rgba(255,255,255,0.3)', fontSize: '32px'
+                                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #818cf8', color: 'rgba(255,255,255,0.4)', fontSize: '28px',
+                                    fontWeight: 'bold'
                                 }}>?</div>
                                 {/* Back (Face of card) */}
                                 <div style={{
                                     position: 'absolute', width: '100%', height: '100%', backfaceVisibility: 'hidden',
-                                    background: 'white', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    background: 'white', borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     boxShadow: '0 4px 6px rgba(0,0,0,0.1)', border: '2px solid #e0e7ff', transform: 'rotateY(180deg)',
-                                    fontSize: '48px'
+                                    fontSize: parseInt(getCardSize()) * 0.6 + 'px'
                                 }}>{card.symbol}</div>
                             </div>
                         </div>
@@ -135,10 +181,13 @@ export default function MemoryMatrixGame({ config, onFinish, onExit }) {
             </div>
 
             {paused && (
-                <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)', borderRadius: 16 }}>
-                    <button className="btn btn-primary btn-lg" onClick={() => setPaused(false)} style={{ transform: 'scale(1.2)' }}>
-                        <Play size={24} /> Продолжить
-                    </button>
+                <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }}>
+                    <div className="flex flex-col items-center gap-4 animate-bounce-short">
+                        <h2 className="text-3xl font-black text-slate-800">ПАУЗА II</h2>
+                        <button className="btn btn-primary btn-lg gap-2" onClick={() => setPaused(false)} style={{ transform: 'scale(1.2)' }}>
+                            <Play size={24} /> Продолжить
+                        </button>
+                    </div>
                 </div>
             )}
         </div>

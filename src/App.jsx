@@ -12,6 +12,7 @@ import ToolsPage from './pages/ToolsPage'
 import ToolPage from './pages/ToolPage'
 import GamesPage from './pages/GamesPage'
 import GamePage from './pages/GamePage'
+import ClassesPage from './pages/ClassesPage'
 
 // Admin
 import AdminLayout from './pages/admin/AdminLayout'
@@ -47,6 +48,7 @@ function App() {
                         {/* App Shell */}
                         <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
                             <Route index element={<DashboardPage />} />
+                            <Route path="classes" element={<ClassesPage />} />
                             <Route path="generators" element={<GeneratorsPage />} />
                             <Route path="generator/:type" element={<GeneratorPage />} />
                             <Route path="tools" element={<ToolsPage />} />
