@@ -2,6 +2,17 @@ import { useState, useEffect, useRef } from 'react'
 import { TeamBlue, TeamRed } from './BrainTugAssets'
 import { Clock, Check, X, ArrowLeft } from 'lucide-react'
 
+const wobbleKeyframes = `
+@keyframes wobble {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+.animate-wobble {
+  animation: wobble 0.5s ease-in-out;
+}
+`
+
 /* =========================================
    HELPER: Generate Math/Logic/Science Question
    ========================================= */
@@ -330,10 +341,23 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
                 {/* Rope Scene */}
                 <div className="bt-scene-box">
                     <div className="bt-center-dashed" />
-                    <div className="bt-rope-group" style={{ transform: `translateX(${ropePos * 1.5}px)` }}>
-                        <TeamBlue className={`bt-team-svg-blue ${animState === 'pull-blue' ? 'pulling' : ''}`} />
-                        <div className="bt-rope-connector"><div className="bt-rope-marker" /></div>
-                        <TeamRed className={`bt-team-svg-red ${animState === 'pull-red' ? 'pulling' : ''}`} />
+                    <div
+                        className="bt-rope-group"
+                        style={{
+                            transform: `translateX(${ropePos * 2}px) rotate(${ropePos / 10}deg)`,
+                            transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                        }}
+                    >
+                        <img
+                            src="/images/tug-of-war-gameplay.png"
+                            alt="Tug of War"
+                            style={{
+                                width: '600px',
+                                maxWidth: 'none',
+                                filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.2))'
+                            }}
+                            className={animState !== 'idle' ? 'animate-wobble' : ''}
+                        />
                     </div>
                 </div>
             </div>
@@ -352,5 +376,6 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
                 />
             </div>
         </div>
+        <style>{wobbleKeyframes}</style>
     )
 }

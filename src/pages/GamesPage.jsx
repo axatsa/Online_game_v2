@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { Star, Play } from 'lucide-react'
 
 const GAMES_DATA = [
-    { id: 'jeopardy', title: 'Своя Игра', desc: 'Командная викторина', category: 'Все', rating: 5.0, gradient: 'linear-gradient(135deg, #1e3a8a, #1d4ed8)', coverUrl: '' },
-    { id: 'balance', title: 'Весы', desc: 'Найди равновесие', category: 'Математика', rating: 4.7, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', coverUrl: '' },
-    { id: 'word-search', title: 'Филворд', desc: 'Найди слова', category: 'Язык', rating: 4.4, gradient: 'linear-gradient(135deg, #10b981, #059669)', coverUrl: '' },
-    { id: 'brain-tug', title: 'Битва знаний', desc: 'Математическая дуэль двух команд', category: 'Математика', rating: 4.8, gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', coverUrl: '' },
-    { id: 'memory-matrix', title: 'Memory Matrix', desc: 'Найди пары карточек', category: 'Логика', rating: 4.5, gradient: 'linear-gradient(135deg, #7C3AED, #6D28D9)', coverUrl: '' },
+    { id: 'jeopardy', title: 'Своя Игра', desc: 'Командная викторина', category: 'Все', rating: 5.0, gradient: 'linear-gradient(135deg, #1e3a8a, #1d4ed8)', coverUrl: '/game-covers/jeopardy.png' },
+    { id: 'balance', title: 'Весы', desc: 'Найди равновесие', category: 'Математика', rating: 4.7, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', coverUrl: '/game-covers/balance.png' },
+    { id: 'word-search', title: 'Филворд', desc: 'Найди слова', category: 'Язык', rating: 4.4, gradient: 'linear-gradient(135deg, #10b981, #059669)', coverUrl: '/game-covers/word-search.png' },
+    { id: 'brain-tug', title: 'Битва знаний', desc: 'Математическая дуэль двух команд', category: 'Математика', rating: 4.8, gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', coverUrl: '/game-covers/brain-tug.png' },
+    { id: 'memory-matrix', title: 'Memory Matrix', desc: 'Найди пары карточек', category: 'Логика', rating: 4.5, gradient: 'linear-gradient(135deg, #7C3AED, #6D28D9)', coverUrl: '/game-covers/memory-matrix.png' },
 ]
 
 const CATEGORIES = ['Все', 'Математика', 'Логика', 'Язык', 'Наука']
