@@ -104,19 +104,18 @@ export default function GamePage() {
 
                             <div className="form-control mb-6">
                                 <label className="label font-bold">Уровень класса (Сложность)</label>
-                                <input
-                                    type="range" min="1" max="6" step="1"
-                                    value={config.grade}
-                                    onChange={(e) => setConfig({ ...config, grade: parseInt(e.target.value) })}
-                                    className="range range-primary"
-                                />
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[1, 2, 3, 4, 5, 6].map(g => (
+                                        <button
+                                            key={g}
+                                            className={`btn ${config.grade === g ? 'btn-primary' : 'btn-outline'}`}
+                                            onClick={() => setConfig({ ...config, grade: g })}
+                                        >
+                                            {g} класс
+                                        </button>
+                                    ))}
+                                </div>
                                 <div className="w-full flex justify-between text-xs px-2 mt-2 font-bold text-slate-500">
-                                    <span>1 класс</span>
-                                    <span>2 класс</span>
-                                    <span>3 класс</span>
-                                    <span>4 класс</span>
-                                    <span>5 класс</span>
-                                    <span>6 класс</span>
                                 </div>
                             </div>
                         </>
@@ -154,20 +153,17 @@ export default function GamePage() {
                     {gameId === 'balance' && (
                         <div className="form-control mb-6">
                             <label className="label font-bold">Сложность примеров</label>
-                            <div className="w-full flex justify-between px-1 mb-2">
-                                <span className={config.difficulty === 'easy' ? 'text-primary font-bold' : ''}>Легко</span>
-                                <span className={config.difficulty === 'medium' ? 'text-primary font-bold' : ''}>Средне</span>
-                                <span className={config.difficulty === 'hard' ? 'text-primary font-bold' : ''}>Сложно</span>
+                            <div className="join w-full">
+                                {['easy', 'medium', 'hard'].map(d => (
+                                    <button
+                                        key={d}
+                                        className={`join-item btn flex-1 ${config.difficulty === d ? 'btn-primary' : ''}`}
+                                        onClick={() => setConfig({ ...config, difficulty: d })}
+                                    >
+                                        {d === 'easy' ? 'Легко' : d === 'medium' ? 'Средне' : 'Сложно'}
+                                    </button>
+                                ))}
                             </div>
-                            <input
-                                type="range" min="0" max="2"
-                                value={config.difficulty === 'easy' ? 0 : config.difficulty === 'medium' ? 1 : 2}
-                                onChange={(e) => {
-                                    const val = parseInt(e.target.value)
-                                    setConfig({ ...config, difficulty: val === 0 ? 'easy' : val === 1 ? 'medium' : 'hard' })
-                                }}
-                                className="range range-primary"
-                            />
                         </div>
                     )}
 

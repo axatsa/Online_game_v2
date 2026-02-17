@@ -84,31 +84,30 @@ export default function JeopardySetup({ config, setConfig, onStart }) {
                 </label>
             </div>
 
-            {/* Difficulty Slider */}
+            {/* Difficulty Buttons */}
             <div className="form-control mb-8">
                 <label className="label">
                     <span className="label-text font-bold text-lg">Сложность</span>
-                    <span className="label-text-alt font-medium uppercase text-primary">
-                        {config.difficulty === 'easy' ? 'Легко' : config.difficulty === 'medium' ? 'Средне' : 'Сложно'}
-                    </span>
                 </label>
-                <input
-                    type="range"
-                    min="0"
-                    max="2"
-                    value={config.difficulty === 'easy' ? 0 : config.difficulty === 'medium' ? 1 : 2}
-                    className="range range-primary"
-                    step="1"
-                    onChange={(e) => {
-                        const val = parseInt(e.target.value)
-                        const diff = val === 0 ? 'easy' : val === 1 ? 'medium' : 'hard'
-                        setConfig({ ...config, difficulty: diff })
-                    }}
-                />
-                <div className="w-full flex justify-between text-xs px-2 mt-2 font-medium text-gray-500">
-                    <span>Легко</span>
-                    <span>Средне</span>
-                    <span>Сложно</span>
+                <div className="flex gap-2">
+                    <button
+                        className={`btn flex-1 ${config.difficulty === 'easy' ? 'btn-primary' : 'btn-outline'}`}
+                        onClick={() => setConfig({ ...config, difficulty: 'easy' })}
+                    >
+                        Легко
+                    </button>
+                    <button
+                        className={`btn flex-1 ${config.difficulty === 'medium' ? 'btn-primary' : 'btn-outline'}`}
+                        onClick={() => setConfig({ ...config, difficulty: 'medium' })}
+                    >
+                        Средне
+                    </button>
+                    <button
+                        className={`btn flex-1 ${config.difficulty === 'hard' ? 'btn-primary' : 'btn-outline'}`}
+                        onClick={() => setConfig({ ...config, difficulty: 'hard' })}
+                    >
+                        Сложно
+                    </button>
                 </div>
             </div>
 

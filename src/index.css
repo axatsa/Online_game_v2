@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "daisyui";
 
 /* =============================================
    ClassPlay Design System — Global Styles
