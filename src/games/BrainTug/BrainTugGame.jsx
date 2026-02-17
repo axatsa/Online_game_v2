@@ -2,17 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { TeamBlue, TeamRed } from './BrainTugAssets'
 import { Clock, Check, X, ArrowLeft } from 'lucide-react'
 
-const wobbleKeyframes = `
-@keyframes wobble {
-  0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(-3deg); }
-  75% { transform: rotate(3deg); }
-}
-.animate-wobble {
-  animation: wobble 0.5s ease-in-out;
-}
-`
-
 /* =========================================
    HELPER: Generate Math/Logic/Science Question
    ========================================= */
@@ -376,6 +365,5 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
                 />
             </div>
         </div>
-        <style>{wobbleKeyframes}</style>
     )
 }
