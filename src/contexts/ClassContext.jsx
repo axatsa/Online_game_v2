@@ -154,6 +154,20 @@ export function ClassProvider({ children }) {
 
 
 
+    // Students Helper
+    const fetchStudents = async (classId) => {
+        if (!token) return []
+        try {
+            const res = await fetch(`/api/classes/${classId}/students`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            if (res.ok) return await res.json()
+        } catch (e) {
+            console.error(e)
+        }
+        return []
+    }
+
     // Build AI prompt from context
     const buildPrompt = () => {
         const parts = []
