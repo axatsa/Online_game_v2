@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* =============================================
    ClassPlay Design System — Global Styles
@@ -812,4 +810,38 @@ tbody tr:hover {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--cp-text-muted);
 }
-@media print { .app-header, .doc-toolbar, .split-sidebar, .bt-back-btn, .modal-overlay, .admin-sidebar, .filter-pills, .btn { display: none !important; } .split-view, .page, .split-main { height: auto !important; display: block !important; padding: 0 !important; margin: 0 !important; overflow: visible !important; } .paper-preview { box-shadow: none !important; padding: 0 !important; margin: 0 !important; width: 100% !important; } body { background: white !important; } }
+
+@media print {
+
+  .app-header,
+  .doc-toolbar,
+  .split-sidebar,
+  .bt-back-btn,
+  .modal-overlay,
+  .admin-sidebar,
+  .filter-pills,
+  .btn {
+    display: none !important;
+  }
+
+  .split-view,
+  .page,
+  .split-main {
+    height: auto !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .paper-preview {
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  body {
+    background: white !important;
+  }
+}
