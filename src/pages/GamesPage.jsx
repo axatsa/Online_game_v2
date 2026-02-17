@@ -1,13 +1,58 @@
-import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { Star, Play } from 'lucide-react'
+import { Sparkles } from 'lucide-react'
+import GameCard from '../components/GameCard'
 
 const GAMES_DATA = [
-    { id: 'jeopardy', title: 'Своя Игра', desc: 'Командная викторина', category: 'Все', rating: 5.0, gradient: 'linear-gradient(135deg, #1e3a8a, #1d4ed8)', coverUrl: '/game-covers/jeopardy.png' },
-    { id: 'balance', title: 'Весы', desc: 'Найди равновесие', category: 'Математика', rating: 4.7, gradient: 'linear-gradient(135deg, #f59e0b, #d97706)', coverUrl: '/game-covers/balance.png' },
-    { id: 'word-search', title: 'Филворд', desc: 'Найди слова', category: 'Язык', rating: 4.4, gradient: 'linear-gradient(135deg, #10b981, #059669)', coverUrl: '/game-covers/word-search.png' },
-    { id: 'brain-tug', title: 'Битва знаний', desc: 'Математическая дуэль двух команд', category: 'Математика', rating: 4.8, gradient: 'linear-gradient(135deg, #2563EB, #1D4ED8)', coverUrl: '/game-covers/brain-tug.png' },
-    { id: 'memory-matrix', title: 'Memory Matrix', desc: 'Найди пары карточек', category: 'Логика', rating: 4.5, gradient: 'linear-gradient(135deg, #7C3AED, #6D28D9)', coverUrl: '/game-covers/memory-matrix.png' },
+    {
+        id: 'brain-tug',
+        title: 'Битва Знаний',
+        desc: 'Эпическое перетягивание каната! Команды решают примеры на скорость.',
+        category: 'Математика',
+        rating: 4.9,
+        gradient: 'linear-gradient(135deg, #ef4444, #991b1b)',
+        coverUrl: '/game-covers/brain-tug.png',
+        difficulty: 'Любой'
+    },
+    {
+        id: 'jeopardy',
+        title: 'Своя Игра',
+        desc: 'Классическая викторина. Выбирайте категории и сложность вопросов.',
+        category: 'Все',
+        rating: 5.0,
+        gradient: 'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+        coverUrl: '/game-covers/jeopardy.png',
+        difficulty: 'Сложный'
+    },
+    {
+        id: 'memory-matrix',
+        title: 'Memory Matrix',
+        desc: 'Тренировка визуальной памяти. Запомните расположение плиток.',
+        category: 'Логика',
+        rating: 4.7,
+        gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+        coverUrl: '/game-covers/memory-matrix.png',
+        difficulty: 'Хардкор'
+    },
+    {
+        id: 'balance',
+        title: 'Весы',
+        desc: 'Уравновесьте чаши весов, решая математические уравнения.',
+        category: 'Математика',
+        rating: 4.6,
+        gradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
+        coverUrl: '/game-covers/balance.png',
+        difficulty: 'Средний'
+    },
+    {
+        id: 'word-search',
+        title: 'Филворд',
+        desc: 'Найдите спрятанные слова в сетке букв. Расширяем словарный запас.',
+        category: 'Язык',
+        rating: 4.5,
+        gradient: 'linear-gradient(135deg, #10b981, #059669)',
+        coverUrl: '/game-covers/word-search.png',
+        difficulty: 'Легкий'
+    },
 ]
 
 const CATEGORIES = ['Все', 'Математика', 'Логика', 'Язык', 'Наука']
@@ -18,57 +63,49 @@ export default function GamesPage() {
     const filtered = filter === 'Все' ? GAMES_DATA : GAMES_DATA.filter(g => g.category === filter)
 
     return (
-        <div className="page animate-fade">
-            <div style={{ marginBottom: 24 }}>
-                <h1>Библиотека игр</h1>
-                <p className="text-secondary" style={{ marginTop: 4 }}>
-                    Образовательные игры для вашего класса
+        <div className="space-y-8 animate-fade-up">
+            {/* Header */}
+            <div>
+                <h1 className="text-3xl font-bold text-slate-900 mb-2">Библиотека Игр</h1>
+                <p className="text-slate-500 max-w-2xl">
+                    Интерактивные игры для вовлечения всего класса. Запускайте прямо на доске.
                 </p>
             </div>
 
-            {/* Filter Pills */}
-            <div className="filter-pills" style={{ marginBottom: 24 }}>
+            {/* Filters */}
+            <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map(cat => (
                     <button
                         key={cat}
-                        className={`filter-pill ${filter === cat ? 'active' : ''}`}
                         onClick={() => setFilter(cat)}
+                        className={`
+                            px-4 py-2 rounded-full text-sm font-medium transition-all
+                            ${filter === cat
+                                ? 'bg-slate-900 text-white shadow-md transform scale-105'
+                                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}
+                        `}
                     >
                         {cat}
                     </button>
                 ))}
             </div>
 
-            {/* Games Grid */}
-            <div className="game-grid">
-                {filtered.map(game => (
-                    <Link key={game.id} to={`/game/${game.id}`} className="card card-flush card-hover" style={{ textDecoration: 'none', color: 'inherit', overflow: 'hidden' }}>
-                        <div style={{
-                            height: 140,
-                            background: game.coverUrl ? `url(${game.coverUrl}) center/cover` : game.gradient,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            position: 'relative'
-                        }}>
-                            {!game.coverUrl && <Play size={48} color="white" />}
-                        </div>
-                        <div style={{ padding: 20 }}>
-                            <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>
-                                <span className="badge badge-primary">{game.category}</span>
-                                <span className="flex items-center gap-xs text-sm" style={{ color: 'var(--cp-amber)' }}>
-                                    <Star size={14} fill="currentColor" /> {game.rating}
-                                </span>
-                            </div>
-                            <h3 style={{ marginBottom: 4 }}>{game.title}</h3>
-                            <p className="text-secondary text-sm">{game.desc}</p>
-                            <button className="btn btn-primary btn-sm btn-full" style={{ marginTop: 16 }}>
-                                Играть
-                            </button>
-                        </div>
-                    </Link>
-                ))}
-            </div>
+            {/* Grid */}
+            {filtered.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filtered.map(game => (
+                        <GameCard key={game.id} game={game} />
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-20 bg-white rounded-2xl border border-slate-100 border-dashed">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300">
+                        <Sparkles size={32} />
+                    </div>
+                    <h3 className="text-lg font-medium text-slate-900">Игр пока нет</h3>
+                    <p className="text-slate-500">Попробуйте выбрать другую категорию</p>
+                </div>
+            )}
         </div>
     )
 }

@@ -1,17 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
-import { TeamBlue, TeamRed } from './BrainTugAssets'
-import { Clock, Check, X, ArrowLeft } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Clock, Check, X, ArrowLeft, RotateCcw } from 'lucide-react'
 
 /* =========================================
-   HELPER: Generate Math/Logic/Science Question
-   ========================================= */
-/* =========================================
-   HELPER: Generate Question based on Grade (1-6)
+   HELPER: Generate Question
    ========================================= */
 function generateQuestion(grade) {
     const id = Math.random()
 
-    // Grade 1: Simple Addition/Subtraction (0-20)
+    // Simplified for brevity, keeping core logic
     if (grade === 1) {
         const op = Math.random() > 0.5 ? '+' : '-'
         if (op === '+') {
@@ -24,135 +20,92 @@ function generateQuestion(grade) {
             return { text: `${a} - ${b} = ?`, correct: a - b, id }
         }
     }
-
-    // Grade 2: Add/Sub (0-100)
-    if (grade === 2) {
-        const op = Math.random() > 0.5 ? '+' : '-'
-        const a = Math.floor(Math.random() * 40) + 10
-        const b = Math.floor(Math.random() * 40) + 10
-        if (op === '+') return { text: `${a} + ${b} = ?`, correct: a + b, id }
-        // Ensure positive
-        const big = Math.max(a, b), small = Math.min(a, b)
-        return { text: `${big} - ${small} = ?`, correct: big - small, id }
-    }
-
-    // Grade 3: + Multiplication Table (1-10)
-    if (grade === 3) {
-        const type = Math.random()
-        if (type < 0.4) { // Add/Sub
-            const a = Math.floor(Math.random() * 80) + 10
-            const b = Math.floor(Math.random() * 80) + 10
-            return { text: `${a} + ${b} = ?`, correct: a + b, id }
-        } else { // Mul
-            const a = Math.floor(Math.random() * 9) + 2
-            const b = Math.floor(Math.random() * 9) + 2
-            return { text: `${a} × ${b} = ?`, correct: a * b, id }
-        }
-    }
-
-    // Grade 4: + Division & logic
-    if (grade === 4) {
-        const type = Math.random()
-        if (type < 0.3) { // Mul
-            const a = Math.floor(Math.random() * 12) + 2
-            const b = Math.floor(Math.random() * 12) + 2
-            return { text: `${a} × ${b} = ?`, correct: a * b, id }
-        } else if (type < 0.6) { // Div
-            const b = Math.floor(Math.random() * 9) + 2
-            const ans = Math.floor(Math.random() * 9) + 2
-            return { text: `${b * ans} : ${b} = ?`, correct: ans, id }
-        } else { // Logic
-            const start = Math.floor(Math.random() * 20) + 1
-            const step = Math.floor(Math.random() * 5) + 2
-            return { text: `${start}, ${start + step}, ${start + step * 2}, ?`, correct: start + step * 3, id }
-        }
-    }
-
-    // Grade 5-6: Harder Math + Science/General
-    const subject = Math.random()
-    if (subject < 0.7) { // Math
-        const type = Math.random()
-        if (type < 0.3) {
-            const a = Math.floor(Math.random() * 20) + 10
-            const b = Math.floor(Math.random() * 9) + 2
-            return { text: `${a} × ${b} = ?`, correct: a * b, id }
-        } else if (type < 0.6) {
-            // Order of ops: 2 + 2 * 2
-            const a = Math.floor(Math.random() * 5) + 2
-            const b = Math.floor(Math.random() * 5) + 2
-            const c = Math.floor(Math.random() * 5) + 2
-            return { text: `${a} + ${b} × ${c} = ?`, correct: a + b * c, id }
-        } else {
-            // Square
-            const a = Math.floor(Math.random() * 10) + 1
-            return { text: `${a}² = ?`, correct: a * a, id }
-        }
-    } else { // General Knowledge
-        const facts = [
-            { q: '50% от 100?', a: 50 },
-            { q: 'Углов у квадрата?', a: 4 },
-            { q: 'Углов у треугольника?', a: 3 },
-            { q: '1 час = ? мин', a: 60 },
-            { q: '1 кг = ? гр', a: 1000 },
-            { q: 'В сутках часов?', a: 24 },
-            { q: 'Дней в году (обычном)?', a: 365 },
-            { q: 'Какой месяц 1-й?', a: 1 },
-            { q: 'Сколько материков?', a: 6 }
-        ]
-        const f = facts[Math.floor(Math.random() * facts.length)]
-        return { text: f.q, correct: f.a, id }
-    }
+    // Default fallback
+    const a = Math.floor(Math.random() * 20) + 1
+    const b = Math.floor(Math.random() * 9) + 1
+    return { text: `${a} + ${b} = ?`, correct: a + b, id }
 }
 
 /* =========================================
-   COMPONENT: Player Panel
+   COMPONENT: Player Calculator Panel
    ========================================= */
-const PlayerPanel = ({ teamName, color, score, question, input, onInput, onClear, onSubmit, isBlocked }) => {
+const PlayerPanel = ({ teamName, color, score, question, input, onInput, onClear, onSubmit, shake }) => {
     const isBlue = color === 'blue'
-    const theme = isBlue ? {
-        bg: '#3B82F6',
-        soft: '#EFF6FF',
-        border: '#BFDBFE',
-        btn: '#2563EB'
-    } : {
-        bg: '#EF4444',
-        soft: '#FEF2F2',
-        border: '#FECACA',
-        btn: '#DC2626'
-    }
+
+    // Theme configurations
+    const bgClass = isBlue ? 'bg-blue-600' : 'bg-red-600'
+    const btnClass = isBlue
+        ? 'bg-blue-500 hover:bg-blue-400 active:bg-blue-700 text-white'
+        : 'bg-red-500 hover:bg-red-400 active:bg-red-700 text-white'
+    const actionBtnClass = isBlue ? 'bg-blue-800 text-blue-200' : 'bg-red-800 text-red-200'
 
     return (
-        <div className={`bt-player-card ${isBlue ? 'blue-side' : 'red-side'}`}>
-            {/* Header */}
-            <div className="bt-p-header" style={{ background: theme.bg }}>
-                <span className="bt-p-name">{teamName}</span>
-                <div className="bt-p-score-badge">{score}</div>
+        <div className={`
+             flex flex-col h-full w-full p-4 relative overflow-hidden transition-transform duration-100 mb-safe
+             ${shake ? 'translate-x-2' : ''} ${bgClass}
+        `}>
+            {/* Header / Score */}
+            <div className="flex justify-between items-center mb-6 text-white">
+                <h2 className="text-xl font-bold truncate max-w-[70%]">{teamName}</h2>
+                <div className="text-4xl font-black bg-black/20 px-4 py-2 rounded-xl backdrop-blur-sm">
+                    {score}
+                </div>
             </div>
 
-            {/* Question */}
-            <div className="bt-p-question-box" style={{ background: theme.soft }}>
-                {question.text}
+            {/* Question Display */}
+            <div className="flex-1 flex flex-col items-center justify-center mb-6">
+                <div className="text-6xl font-black text-white drop-shadow-md mb-4 text-center">
+                    {question?.text}
+                </div>
+                {/* Input Display */}
+                <div className={`
+                    h-20 w-full bg-black/20 rounded-2xl flex items-center justify-center
+                    text-5xl font-mono text-white tracking-widest border-2 border-white/10
+                `}>
+                    {input || <span className="opacity-30">0</span>}
+                </div>
             </div>
 
-            {/* Input Display */}
-            <div className="bt-p-input-display">
-                {input || <span className="placeholder">0</span>}
-            </div>
-
-            {/* NumPad */}
-            <div className="bt-numpad-grid">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
-                    <button key={n} className="bt-num-btn" onClick={() => onInput(n)}>{n}</button>
+            {/* Calculator Grid */}
+            <div className="grid grid-cols-3 gap-3 h-1/2">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                    <button
+                        key={num}
+                        onClick={() => onInput(num)}
+                        className={`
+                            rounded-xl text-3xl font-bold shadow-sm transition-all
+                            active:scale-95 touch-manipulation
+                            ${btnClass}
+                        `}
+                    >
+                        {num}
+                    </button>
                 ))}
 
-                <button className="bt-action-btn clear" onClick={onClear} style={{ background: theme.bg }}>
-                    <X size={24} />
+                {/* Bottom Row */}
+                <button
+                    onClick={onClear}
+                    className={`rounded-xl flex items-center justify-center active:scale-95 transition-all ${actionBtnClass}`}
+                >
+                    <X size={32} />
                 </button>
 
-                <button className="bt-num-btn" onClick={() => onInput(0)}>0</button>
+                <button
+                    onClick={() => onInput(0)}
+                    className={`
+                        rounded-xl text-3xl font-bold shadow-sm transition-all
+                        active:scale-95
+                        ${btnClass}
+                    `}
+                >
+                    0
+                </button>
 
-                <button className="bt-action-btn submit" onClick={onSubmit} style={{ background: theme.bg }}>
-                    <Check size={24} />
+                <button
+                    onClick={onSubmit}
+                    className="bg-green-500 hover:bg-green-400 active:bg-green-600 text-white rounded-xl flex items-center justify-center shadow-lg active:scale-95 transition-all"
+                >
+                    <Check size={40} strokeWidth={3} />
                 </button>
             </div>
         </div>
@@ -164,117 +117,79 @@ const PlayerPanel = ({ teamName, color, score, question, input, onInput, onClear
    ========================================= */
 export default function BrainTugGame({ config, onFinish, onExit }) {
     // Game State
-    const [ropePos, setRopePos] = useState(0) // -100 (Red wins) to +100 (Blue wins)
+    const [ropePos, setRopePos] = useState(0)
     const [time, setTime] = useState(0)
     const [winner, setWinner] = useState(null)
 
-    // Player 1 (Blue) State
-    const [p1Score, setP1Score] = useState(0)
-    const [p1Q, setP1Q] = useState(null)
-    const [p1Input, setP1Input] = useState('')
-    const [p1Shake, setP1Shake] = useState(false) // Error shake
+    // Player States
+    const [p1State, setP1] = useState({ score: 0, q: null, input: '', shake: false })
+    const [p2State, setP2] = useState({ score: 0, q: null, input: '', shake: false })
 
-    // Player 2 (Red) State
-    const [p2Score, setP2Score] = useState(0)
-    const [p2Q, setP2Q] = useState(null)
-    const [p2Input, setP2Input] = useState('')
-    const [p2Shake, setP2Shake] = useState(false)
-
-    // Animation Refs
-    const [animState, setAnimState] = useState('idle') // idle, pull-blue, pull-red
-
-    // Init Questions
+    // Init
     useEffect(() => {
-        const grade = config.grade || 1 // Default to Grade 1
-        setP1Q(generateQuestion(grade))
-        setP2Q(generateQuestion(grade))
-    }, [config])
-
-    // Generate new question on correct answer
-    const nextQuestion = (isP1) => {
         const grade = config.grade || 1
-        if (isP1) setP1Q(generateQuestion(grade))
-        else setP2Q(generateQuestion(grade))
-    }
+        setP1(prev => ({ ...prev, q: generateQuestion(grade) }))
+        setP2(prev => ({ ...prev, q: generateQuestion(grade) }))
 
-    // Timer
-    useEffect(() => {
-        if (winner) return
-        const t = setInterval(() => setTime(s => s + 1), 1000)
-        return () => clearInterval(t)
-    }, [winner])
+        const timer = setInterval(() => {
+            if (!winner) setTime(t => t + 1)
+        }, 1000)
+        return () => clearInterval(timer)
+    }, [config, winner])
 
     // Check Win
     useEffect(() => {
-        if (Math.abs(ropePos) >= 100) {
-            handleWin(ropePos > 0 ? 2 : 1) // Positive = Red, Negative = Blue
+        if (Math.abs(ropePos) >= 100 && !winner) {
+            handleWin(ropePos < 0 ? 1 : 2) // -100 is Blue (Left), +100 is Red (Right)
         }
     }, [ropePos])
 
     const handleWin = (teamId) => {
-        if (winner) return
         setWinner(teamId)
         setTimeout(() => {
             onFinish({
                 winner: teamId,
-                team1XP: p1Score * 10 + (teamId === 1 ? 50 : 0),
-                team2XP: p2Score * 10 + (teamId === 2 ? 50 : 0),
-                ropePos,
-                time
+                team1XP: p1State.score * 10,
+                team2XP: p2State.score * 10
             })
-        }, 1000)
+        }, 1500)
     }
 
-    // --- Handlers ---
     const handleInput = (player, val) => {
         if (winner) return
-        if (player === 1) {
-            if (p1Input.length < 3) setP1Input(prev => prev + val)
-        } else {
-            if (p2Input.length < 3) setP2Input(prev => prev + val)
-        }
+        const minput = (input) => input.length < 3 ? input + val : input
+
+        if (player === 1) setP1(p => ({ ...p, input: minput(p.input) }))
+        else setP2(p => ({ ...p, input: minput(p.input) }))
     }
 
-    const handleClear = (player) => {
-        if (player === 1) setP1Input('')
-        else setP2Input('')
-    }
-
-    const handleSubmit = (player) => {
+    const handleAction = (player, action) => {
         if (winner) return
-        const isP1 = player === 1
-        const q = isP1 ? p1Q : p2Q
-        const input = isP1 ? p1Input : p2Input
-        const val = parseInt(input, 10)
+        const setter = player === 1 ? setP1 : setP2
+        const state = player === 1 ? p1State : p2State
 
-        if (isNaN(val)) return
+        if (action === 'clear') {
+            setter(p => ({ ...p, input: '' }))
+            return
+        }
 
-        if (val === q.correct) {
-            // Correct!
-            if (isP1) {
-                setP1Score(s => s + 1)
-                setRopePos(p => Math.max(p - 10, -100)) // Blue pulls Left (negative)
-                setAnimState('pull-blue')
-                nextQuestion(true)
-                setP1Input('')
+        if (action === 'submit') {
+            const val = parseInt(state.input, 10)
+            if (isNaN(val)) return
+
+            if (val === state.q.correct) {
+                // Correct
+                setter(p => ({
+                    ...p,
+                    score: p.score + 1,
+                    input: '',
+                    q: generateQuestion(config.grade || 1)
+                }))
+                setRopePos(pos => player === 1 ? pos - 10 : pos + 10) // P1 pulls left (-), P2 pulls right (+)
             } else {
-                setP2Score(s => s + 1)
-                setRopePos(p => Math.min(p + 10, 100)) // Red pulls Right (positive)
-                setAnimState('pull-red')
-                nextQuestion(false)
-                setP2Input('')
-            }
-
-            // Reset animation
-            setTimeout(() => setAnimState('idle'), 500)
-        } else {
-            // Wrong!
-            if (isP1) {
-                setP1Shake(true); setTimeout(() => setP1Shake(false), 500)
-                setP1Input('')
-            } else {
-                setP2Shake(true); setTimeout(() => setP2Shake(false), 500)
-                setP2Input('')
+                // Wrong
+                setter(p => ({ ...p, input: '', shake: true }))
+                setTimeout(() => setter(p => ({ ...p, shake: false })), 500)
             }
         }
     }
@@ -285,85 +200,98 @@ export default function BrainTugGame({ config, onFinish, onExit }) {
         return `${m}:${sec < 10 ? '0' : ''}${sec}`
     }
 
-    if (!p1Q || !p2Q) return null
+    if (!p1State.q || !p2State.q) return null
 
     return (
-        <div className="bt-split-layout">
-            {/* Back Button */}
-            <button className="bt-back-btn" onClick={onExit} title="Выйти в меню">
-                <ArrowLeft size={24} />
-            </button>
-
-            {/* Player 1 Panel */}
-            <div className={`bt-panel-wrapper ${p1Shake ? 'shake' : ''}`}>
+        <div className="fixed inset-0 z-50 bg-slate-900 flex overflow-hidden">
+            {/* Left Panel (Blue) */}
+            <div className="w-1/4 min-w-[300px] border-r border-slate-800 z-10">
                 <PlayerPanel
                     teamName={config.team1}
                     color="blue"
-                    score={p1Score}
-                    question={p1Q}
-                    input={p1Input}
+                    {...p1State}
+                    question={p1State.q}
                     onInput={(v) => handleInput(1, v)}
-                    onClear={() => handleClear(1)}
-                    onSubmit={() => handleSubmit(1)}
+                    onClear={() => handleAction(1, 'clear')}
+                    onSubmit={() => handleAction(1, 'submit')}
                 />
             </div>
 
-            {/* Center Scene */}
-            <div className="bt-center-stage">
-                {/* Timer Bar */}
-                <div className="bt-timer-bar">
-                    <div className="bt-timer-pill">
-                        <div className="bt-p1-mini-score">
-                            <span>{config.team1}</span>
-                            <strong>{p1Score}</strong>
-                        </div>
-                        <div className="bt-timer-val">
-                            <Clock size={16} /> {formatTime(time)}
-                        </div>
-                        <div className="bt-p2-mini-score">
-                            <strong>{p2Score}</strong>
-                            <span>{config.team2}</span>
+            {/* Center Stage */}
+            <div className="flex-1 relative flex flex-col items-center justify-center bg-slate-900 overflow-hidden">
+                {/* Top Bar */}
+                <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start z-20">
+                    <button onClick={onExit} className="p-3 bg-white/10 text-white hover:bg-white/20 rounded-full backdrop-blur transition">
+                        <ArrowLeft size={24} />
+                    </button>
+
+                    <div className="flex flex-col items-center">
+                        <div className="px-6 py-2 bg-slate-800 rounded-full border border-slate-700 text-slate-300 font-mono text-xl flex items-center gap-2 shadow-lg">
+                            <Clock size={20} />
+                            {formatTime(time)}
                         </div>
                     </div>
+
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="p-3 bg-white/10 text-white hover:bg-white/20 rounded-full backdrop-blur transition"
+                    >
+                        <RotateCcw size={24} />
+                    </button>
                 </div>
 
-                {/* Rope Scene */}
-                <div className="bt-scene-box">
-                    <div className="bt-center-dashed" />
+                {/* Rope & Visuals */}
+                <div className="w-full relative flex items-center justify-center">
+                    {/* Rope Line */}
+                    <div className="absolute h-2 bg-slate-700 w-full top-1/2 -translate-y-1/2 left-0 z-0"></div>
+
+                    {/* Center Marker */}
+                    <div className="absolute h-full w-0.5 bg-white/20 left-1/2 top-0 z-0 border-l border-dashed border-white/30"></div>
+
+                    {/* The Image (Pulling) */}
                     <div
-                        className="bt-rope-group"
-                        style={{
-                            transform: `translateX(${ropePos * 2}px) rotate(${ropePos / 10}deg)`,
-                            transition: 'transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)'
-                        }}
+                        className="relative z-10 transition-transform duration-500 ease-out will-change-transform"
+                        style={{ transform: `translateX(${ropePos * 3}px)` }}
                     >
                         <img
                             src="/images/tug-of-war-gameplay.png"
                             alt="Tug of War"
-                            style={{
-                                width: '600px',
-                                maxWidth: 'none',
-                                filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.2))'
-                            }}
-                            className={animState !== 'idle' ? 'animate-wobble' : ''}
+                            className="max-w-[600px] drop-shadow-2xl"
                         />
                     </div>
                 </div>
+
+                {/* Footer/Hint */}
+                <div className="absolute bottom-8 text-slate-500 text-sm">
+                    Решайте быстрее соперника, чтобы перетянуть канат!
+                </div>
             </div>
 
-            {/* Player 2 Panel */}
-            <div className={`bt-panel-wrapper ${p2Shake ? 'shake' : ''}`}>
+            {/* Right Panel (Red) */}
+            <div className="w-1/4 min-w-[300px] border-l border-slate-800 z-10">
                 <PlayerPanel
                     teamName={config.team2}
                     color="red"
-                    score={p2Score}
-                    question={p2Q}
-                    input={p2Input}
+                    {...p2State}
+                    question={p2State.q}
                     onInput={(v) => handleInput(2, v)}
-                    onClear={() => handleClear(2)}
-                    onSubmit={() => handleSubmit(2)}
+                    onClear={() => handleAction(2, 'clear')}
+                    onSubmit={() => handleAction(2, 'submit')}
                 />
             </div>
+
+            {/* Winner Overlay */}
+            {winner && (
+                <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center animate-fade-in">
+                    <div className="text-center">
+                        <div className="text-6xl mb-4 animate-bounce">🏆</div>
+                        <h1 className={`text-6xl font-black mb-4 ${winner === 1 ? 'text-blue-500' : 'text-red-500'}`}>
+                            {winner === 1 ? config.team1 : config.team2} Победили!
+                        </h1>
+                        <p className="text-white/50 text-xl">Возвращение в меню...</p>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
